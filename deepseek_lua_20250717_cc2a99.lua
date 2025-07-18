@@ -1,4 +1,4 @@
--- UNLOOSED.CC MOBILE - ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
+-- UNLOOSED.CC MOBILE - ПОЛНАЯ ВЕРСИЯ С ИСПРАВЛЕНИЯМИ
 
 -- Ожидание загрузки игры
 repeat task.wait() until game:IsLoaded()
@@ -6,30 +6,19 @@ repeat task.wait() until game:IsLoaded()
 -- Сервисы
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local CoreGui = game:GetService("CoreGui")
-local Workspace = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local TS = game:GetService("TweenService")
+local CG = game:GetService("CoreGui")
+local Camera = workspace.CurrentCamera
 local Lighting = game:GetService("Lighting")
-local HttpService = game:GetService("HttpService")
-local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Ожидание LocalPlayer
-local LocalPlayer = Players.LocalPlayer
-repeat task.wait() until LocalPlayer
+local LP = Players.LocalPlayer
+repeat task.wait() until LP
 
 -- Проверка на мобильное устройство
-local IsMobile = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled and not UserInputService.MouseEnabled
-if not IsMobile then 
-    warn("Скрипт предназначен только для мобильных устройств")
-    return 
-end
-
--- Проверка необходимых функций
-if not Drawing or not hookmetamethod or not getnamecallmethod then
-    warn("Необходимые функции не доступны")
-    return
-end
+local IsMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled and not UIS.MouseEnabled
+if not IsMobile then return end
 
 -- Цветовая схема
 local Theme = {
@@ -102,8 +91,7 @@ local Minimized = false
 local OriginalJumpPower = 50
 local JumpStunConnection = nil
 local SpeedConnection = nil
-local ClassicAimActive = false
-local Camera = Workspace.CurrentCamera
+local AimbotInstance = nil
 
 -- Визуализация
 local FOVCircle = Drawing.new("Circle")
@@ -113,7 +101,6 @@ FOVCircle.Color = Settings.Aim.FOVColor
 FOVCircle.Thickness = 1
 FOVCircle.NumSides = 100
 FOVCircle.Filled = false
-FOVCircle.Radius = 100
 
 local TargetIndicator = Drawing.new("Circle")
 TargetIndicator.Visible = false
@@ -126,7 +113,6 @@ TargetIndicator.Filled = false
 
 -- Функции
 local function degreesToPixels(degrees)
-    if not Camera then return 100 end
     return math.tan(math.rad(degrees / 2)) * (Camera.ViewportSize.Y / (2 * math.tan(math.rad(Camera.FieldOfView / 2))))
 end
 
@@ -134,7 +120,7 @@ local function visibleCheck(target, part)
     if not Settings.Aim.WallCheck then return true end
     if not target or not target.Character or not part then return false end
 
-    local LocalPlayerCharacter = LocalPlayer.Character
+    local LocalPlayerCharacter = LP.Character
     if not LocalPlayerCharacter then return false end
 
     local LocalPlayerRoot = LocalPlayerCharacter:FindFirstChild("HumanoidRootPart")
@@ -145,7 +131,7 @@ local function visibleCheck(target, part)
     raycastParams.FilterType = Enum.RaycastFilterType.Exclude
     raycastParams.IgnoreWater = true
 
-    local raycastResult = Workspace:Raycast(
+    local raycastResult = workspace:Raycast(
         LocalPlayerRoot.Position,
         (part.Position - LocalPlayerRoot.Position).Unit * 1000,
         raycastParams
@@ -157,10 +143,10 @@ end
 local function getClosestPlayer()
     local closestTarget = nil
     local closestDistance = Settings.Aim.FOV
-    local mousePos = UserInputService:GetMouseLocation()
+    local mousePos = UIS:GetMouseLocation()
     
     for _, player in ipairs(Players:GetPlayers()) do
-        if player == LocalPlayer then continue end
+        if player == LP then continue end
         if not player.Character then continue end
         
         local humanoid = player.Character:FindFirstChild("Humanoid")
@@ -191,68 +177,10 @@ local function getClosestPlayer()
     return closestTarget
 end
 
--- Классический аимбот
-local function ClassicAim()
-    if not Settings.Aim.ClassicAim or not ClassicAimActive then return end
-    
-    local target = getClosestPlayer()
-    if target and target.Part then
-        local camera = Workspace.CurrentCamera
-        local targetPos = target.Part.Position
-        
-        if Settings.Aim.Prediction then
-            local humanoid = target.Player.Character:FindFirstChild("Humanoid")
-            if humanoid then
-                targetPos = targetPos + (humanoid.MoveDirection * Settings.Aim.PredictionAmount)
-            end
-        end
-        
-        local currentCF = camera.CFrame
-        local targetCF = CFrame.lookAt(camera.CFrame.Position, targetPos)
-        camera.CFrame = currentCF:Lerp(targetCF, Settings.Aim.ClassicAimSmoothness)
-    end
-end
-
--- Хук для Raycast
-local oldNamecall
-oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-    local method = getnamecallmethod()
-    local args = {...}
-    
-    if Settings.Aim.SilentAim and not checkcaller() and method == "Raycast" and self == Workspace then
-        local target = getClosestPlayer()
-        if target and math.random(1, 100) <= Settings.Aim.HitChance then
-            local origin = args[2]
-            local direction = (target.Part.Position - origin).Unit * 1000
-            
-            if Settings.Aim.Prediction then
-                local humanoid = target.Player.Character:FindFirstChild("Humanoid")
-                if humanoid then
-                    direction = (target.Part.Position + (humanoid.MoveDirection * Settings.Aim.PredictionAmount) - origin).Unit * 1000
-                end
-            end
-            
-            args[3] = direction
-            return oldNamecall(self, unpack(args))
-        end
-    end
-    
-    return oldNamecall(self, ...)
-end)
-
 -- Функции для функций
 local function ToggleFly()
     if Settings.Movement.Fly then
-        if not FlyInstance then
-            local success, result = pcall(function()
-                return loadstring(game:HttpGet("https://pastebin.com/raw/5HvNBUec", true))()
-            end)
-            if success then
-                FlyInstance = result
-            else
-                warn("Ошибка загрузки Fly: " .. tostring(result))
-            end
-        end
+        FlyInstance = loadstring(game:HttpGet("https://pastebin.com/raw/5HvNBUec"))()
     else
         if FlyInstance then
             pcall(function() FlyInstance:Destroy() end)
@@ -263,16 +191,7 @@ end
 
 local function ToggleESP()
     if Settings.Visuals.ESP then
-        if not ESPInstance then
-            local success, result = pcall(function()
-                return loadstring(game:HttpGet("https://pastebin.com/raw/BCCzQZ4s", true))()
-            end)
-            if success then
-                ESPInstance = result
-            else
-                warn("Ошибка загрузки ESP: " .. tostring(result))
-            end
-        end
+        ESPInstance = loadstring(game:HttpGet("https://pastebin.com/raw/BCCzQZ4s"))()
     else
         if ESPInstance then
             pcall(function() ESPInstance:Destroy() end)
@@ -285,8 +204,8 @@ local function ToggleNoClip()
     if Settings.Movement.NoClip then
         if not NoclipConnection then
             NoclipConnection = RunService.Stepped:Connect(function()
-                if LocalPlayer.Character then
-                    for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                if LP.Character then
+                    for _, part in pairs(LP.Character:GetChildren()) do
                         if part:IsA("BasePart") then
                             part.CanCollide = false
                         end
@@ -328,7 +247,7 @@ local function ToggleAmbient()
         SnowPart.Anchored = true
         SnowPart.CanCollide = false
         SnowPart.Transparency = 1
-        SnowPart.Parent = Workspace
+        SnowPart.Parent = workspace
 
         local emitter = Instance.new("ParticleEmitter")
         emitter.Texture = "rbxassetid://258123448"
@@ -350,8 +269,8 @@ end
 
 local function ToggleTrails()
     if Settings.Visuals.Trails then
-        if LocalPlayer.Character then
-            local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+        if LP.Character then
+            local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
             if rootPart then
                 TrailInstance = Instance.new("Trail")
                 TrailInstance.Color = ColorSequence.new(Color3.fromRGB(128, 0, 255))
@@ -395,8 +314,8 @@ local function ToggleCustomFOV()
 end
 
 local function ToggleHighJump()
-    if LocalPlayer.Character then
-        local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+    if LP.Character then
+        local humanoid = LP.Character:FindFirstChild("Humanoid")
         if humanoid then
             if Settings.Movement.HighJump then
                 OriginalJumpPower = humanoid.JumpPower
@@ -414,7 +333,7 @@ local function PerformDash()
         IsDashing = true
         LastDashTime = currentTime
         
-        local character = LocalPlayer.Character
+        local character = LP.Character
         if not character then return end
         
         local humanoid = character:FindFirstChild("Humanoid")
@@ -445,9 +364,9 @@ local function UpdateSpeed()
     if Settings.Movement.Speed then
         if not SpeedConnection then
             SpeedConnection = RunService.Heartbeat:Connect(function(delta)
-                if LocalPlayer.Character then
-                    local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-                    local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+                if LP.Character then
+                    local humanoid = LP.Character:FindFirstChild("Humanoid")
+                    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
                     
                     if humanoid and rootPart and humanoid.MoveDirection.Magnitude > 0 then
                         local moveDir = humanoid.MoveDirection
@@ -474,8 +393,8 @@ local function ToggleJumpStun()
         end
         
         JumpStunConnection = RunService.Heartbeat:Connect(function()
-            if LocalPlayer.Character then
-                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if LP.Character then
+                local humanoid = LP.Character:FindFirstChild("Humanoid")
                 if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Jumping then
                     humanoid:ChangeState(Enum.HumanoidStateType.Landed)
                     humanoid:ChangeState(Enum.HumanoidStateType.Running)
@@ -493,7 +412,7 @@ end
 local function ToggleAntiAFK()
     if Settings.Misc.AntiAFK then
         local VirtualUser = game:GetService("VirtualUser")
-        LocalPlayer.Idled:Connect(function()
+        LP.Idled:Connect(function()
             VirtualUser:CaptureController()
             VirtualUser:ClickButton2(Vector2.new())
         end)
@@ -502,11 +421,22 @@ end
 
 local function ToggleAntiDeath()
     if Settings.Misc.AntiDeath then
-        local success, result = pcall(function()
-            return loadstring(game:HttpGet("https://pastebin.com/raw/zesZdxrN", true))()
-        end)
-        if not success then
-            warn("Ошибка загрузки AntiDeath: " .. tostring(result))
+        loadstring(game:HttpGet("https://pastebin.com/raw/zesZdxrN"))()
+    end
+end
+
+-- НОВЫЙ КЛАССИЧЕСКИЙ AIMBOT
+local function ToggleClassicAim()
+    if Settings.Aim.ClassicAim then
+        if not AimbotInstance then
+            AimbotInstance = loadstring(game:HttpGet("https://raw.githubusercontent.com/D0LLYNHO/AIMBOT-FOV/main/MOBILE-BETA-0.2", true))()
+        end
+    else
+        if AimbotInstance then
+            pcall(function() 
+                AimbotInstance:Destroy()
+                AimbotInstance = nil 
+            end)
         end
     end
 end
@@ -518,7 +448,7 @@ MobileUI.ResetOnSpawn = false
 if syn and syn.protect_gui then
     syn.protect_gui(MobileUI)
 end
-MobileUI.Parent = CoreGui
+MobileUI.Parent = CG
 
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(0, 350, 0, 400)
@@ -697,7 +627,7 @@ local function CreateToggle(parent, name, tab, setting, callback)
         if input.UserInputType == Enum.UserInputType.Touch then
             Settings[tab][setting] = not Settings[tab][setting]
             
-            local tween = TweenService:Create(toggleBtn, TweenInfo.new(0.2), {
+            local tween = TS:Create(toggleBtn, TweenInfo.new(0.2), {
                 Position = Settings[tab][setting] and UDim2.new(1, -22, 0.5, -10) or UDim2.new(0, 2, 0.5, -10),
                 BackgroundColor3 = Settings[tab][setting] and Theme.Success or Theme.Danger
             })
@@ -779,7 +709,7 @@ local function CreateSlider(parent, name, tab, setting, min, max, callback)
         end
     end)
     
-    UserInputService.InputChanged:Connect(function(input)
+    UIS.InputChanged:Connect(function(input)
         if sliding and input.UserInputType == Enum.UserInputType.Touch then
             local percent = (input.Position.X - sliderTrack.AbsolutePosition.X)/sliderTrack.AbsoluteSize.X
             percent = math.clamp(percent, 0, 1)
@@ -794,7 +724,7 @@ local function CreateSlider(parent, name, tab, setting, min, max, callback)
         end
     end)
     
-    UserInputService.InputEnded:Connect(function(input)
+    UIS.InputEnded:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.Touch then
             sliding = false
         end
@@ -809,7 +739,7 @@ for _, tabName in ipairs(Tabs) do
     -- Aim Tab
     if tabName == "Aim" then
         CreateToggle(content, "Silent Aim", "Aim", "SilentAim")
-        CreateToggle(content, "Classic Aim", "Aim", "ClassicAim")
+        CreateToggle(content, "Classic Aim", "Aim", "ClassicAim", ToggleClassicAim) -- Изменено для использования нового аима
         CreateSlider(content, "Aim Smoothness", "Aim", "ClassicAimSmoothness", 0.1, 1)
         CreateToggle(content, "Auto Shoot", "Aim", "AutoShoot")
         CreateSlider(content, "Hit Chance", "Aim", "HitChance", 0, 100)
@@ -833,8 +763,8 @@ for _, tabName in ipairs(Tabs) do
         CreateSlider(content, "Speed Value", "Movement", "SpeedValue", 16, 100, UpdateSpeed)
         CreateToggle(content, "High Jump", "Movement", "HighJump", ToggleHighJump)
         CreateSlider(content, "Jump Power", "Movement", "JumpPower", 20, 200, function(value)
-            if Settings.Movement.HighJump and LocalPlayer.Character then
-                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if Settings.Movement.HighJump and LP.Character then
+                local humanoid = LP.Character:FindFirstChild("Humanoid")
                 if humanoid then
                     humanoid.JumpPower = value
                 end
@@ -879,9 +809,9 @@ end)
 MinimizeButton.MouseButton1Click:Connect(function()
     Minimized = not Minimized
     if Minimized then
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 40)}):Play()
+        TS:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 40)}):Play()
     else
-        TweenService:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 400)}):Play()
+        TS:Create(MainFrame, TweenInfo.new(0.3), {Size = UDim2.new(0, 350, 0, 400)}):Play()
     end
 end)
 
@@ -903,54 +833,17 @@ HeaderFrame.InputEnded:Connect(function(input)
     end
 end)
 
-UserInputService.InputChanged:Connect(function(input)
+UIS.InputChanged:Connect(function(input)
     if dragging and input.UserInputType == Enum.UserInputType.Touch then
         local delta = input.Position - dragStart
         MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
     end
 end)
 
--- Мобильные контролы
-local function CreateMobileControls()
-    local controls = Instance.new("ScreenGui")
-    controls.Name = "MobileControls"
-    controls.Parent = CoreGui
-    
-    -- Кнопка для классического аимбота
-    local aimButton = Instance.new("TextButton")
-    aimButton.Size = UDim2.new(0, 100, 0, 50)
-    aimButton.Position = UDim2.new(0, 20, 1, -80)
-    aimButton.Text = "AIM"
-    aimButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
-    aimButton.Parent = controls
-    
-    aimButton.TouchTap:Connect(function()
-        ClassicAimActive = not ClassicAimActive
-        aimButton.BackgroundColor3 = ClassicAimActive and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(0, 120, 255)
-    end)
-    
-    -- Кнопка для Jump Stun
-    local jumpStunButton = Instance.new("TextButton")
-    jumpStunButton.Size = UDim2.new(0, 100, 0, 50)
-    jumpStunButton.Position = UDim2.new(1, -120, 1, -80)
-    jumpStunButton.Text = "JUMP STUN"
-    jumpStunButton.BackgroundColor3 = Settings.Misc.JumpStun and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(120, 0, 0)
-    jumpStunButton.Parent = controls
-    
-    jumpStunButton.TouchTap:Connect(function()
-        Settings.Misc.JumpStun = not Settings.Misc.JumpStun
-        jumpStunButton.BackgroundColor3 = Settings.Misc.JumpStun and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(120, 0, 0)
-        ToggleJumpStun()
-    end)
-end
-
-CreateMobileControls()
-
 -- Основной цикл
-local function MainLoop()
+RunService.RenderStepped:Connect(function()
     -- Обновление визуализации
-    local mousePos = UserInputService:GetMouseLocation()
-    FOVCircle.Position = mousePos
+    FOVCircle.Position = UIS:GetMouseLocation()
     
     local target = getClosestPlayer()
     TargetIndicator.Visible = Settings.Aim.ShowTarget and Settings.Aim.SilentAim and target ~= nil
@@ -964,19 +857,12 @@ local function MainLoop()
         local currentTime = tick()
         if currentTime - LastShotTime >= (1 / 10) then -- 10 CPS
             if target and math.random(1, 100) <= Settings.Aim.HitChance then
-                if mousemoverel and mouse1press and mouse1release then
-                    mousemoverel(1, 1)
-                    mouse1press()
-                    task.wait(0.01)
-                    mouse1release()
-                    LastShotTime = currentTime
-                end
+                mouse1press()
+                mouse1release()
+                LastShotTime = currentTime
             end
         end
     end
-    
-    -- Classic Aim
-    ClassicAim()
     
     -- Speed
     if Settings.Movement.Speed then
@@ -989,21 +875,16 @@ local function MainLoop()
     end
     
     -- Обновление позиции снега
-    if Settings.Visuals.Ambient and SnowPart and LocalPlayer.Character then
-        local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if Settings.Visuals.Ambient and SnowPart and LP.Character then
+        local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
             SnowPart.Position = rootPart.Position + Vector3.new(0, 30, 0)
         end
     end
-end
-
--- Запуск основного цикла
-RunService.RenderStepped:Connect(MainLoop)
+end)
 
 -- Обработчик добавления персонажа
-LocalPlayer.CharacterAdded:Connect(function(character)
-    task.wait(1) -- Даем время на загрузку персонажа
-    
+LP.CharacterAdded:Connect(function(character)
     if Settings.Movement.HighJump then
         local humanoid = character:WaitForChild("Humanoid")
         humanoid.JumpPower = Settings.Movement.JumpPower
@@ -1030,8 +911,8 @@ end)
 -- Очистка при закрытии
 game:BindToClose(function()
     pcall(function()
-        if FOVCircle then FOVCircle:Remove() end
-        if TargetIndicator then TargetIndicator:Remove() end
+        FOVCircle:Remove()
+        TargetIndicator:Remove()
         if FlyInstance then FlyInstance:Destroy() end
         if ESPInstance then ESPInstance:Destroy() end
         if NoclipConnection then NoclipConnection:Disconnect() end
@@ -1039,6 +920,7 @@ game:BindToClose(function()
         if FOVConnection then FOVConnection:Disconnect() end
         if JumpStunConnection then JumpStunConnection:Disconnect() end
         if SpeedConnection then SpeedConnection:Disconnect() end
+        if AimbotInstance then AimbotInstance:Destroy() end
         Lighting:ClearAllChildren()
     end)
 end)
