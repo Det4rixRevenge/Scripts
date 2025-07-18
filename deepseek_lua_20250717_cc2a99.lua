@@ -1,11 +1,9 @@
--- UNLOOSED.CC MOBILE VERSION (FULLY PROTECTED)
+-- UNLOOSED.CC MOBILE (PREMIUM UI)
 
 -- Ожидаем загрузку игры
-if not game:IsLoaded() then
-    game.Loaded:Wait()
-end
+repeat wait() until game:IsLoaded()
 
--- Основная функция с защитой от ошибок
+-- Основная функция
 local function Main()
     -- Получаем сервисы
     local Players = game:GetService("Players")
@@ -15,27 +13,24 @@ local function Main()
     local Lighting = game:GetService("Lighting")
     local CoreGui = game:GetService("CoreGui")
     
-    -- Ожидаем появление LocalPlayer
+    -- Ожидаем LocalPlayer
     local LocalPlayer = Players.LocalPlayer
-    while not LocalPlayer do
-        wait(1)
-        LocalPlayer = Players.LocalPlayer
-    end
-
+    repeat wait() until LocalPlayer
+    
     -- Получаем камеру
     local Camera = workspace.CurrentCamera
     workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(function()
         Camera = workspace.CurrentCamera
     end)
 
-    -- Цветовая схема
-    local ColorScheme = {
-        Primary = Color3.fromRGB(147, 112, 219),
-        Secondary = Color3.fromRGB(40, 40, 40),
-        Background = Color3.fromRGB(30, 30, 30),
-        Text = Color3.fromRGB(255, 255, 255),
-        Success = Color3.fromRGB(0, 200, 0),
-        Danger = Color3.fromRGB(200, 0, 0)
+    -- Стиль интерфейса
+    local Theme = {
+        MainColor = Color3.fromRGB(25, 25, 30),
+        SecondaryColor = Color3.fromRGB(35, 35, 45),
+        AccentColor = Color3.fromRGB(140, 110, 220),
+        TextColor = Color3.fromRGB(240, 240, 240),
+        SuccessColor = Color3.fromRGB(100, 220, 100),
+        DangerColor = Color3.fromRGB(220, 100, 100)
     }
 
     -- Настройки
@@ -44,360 +39,414 @@ local function Main()
             SilentAim = false,
             AutoShoot = false,
             HitChance = 100,
-            FOV = 70,
-            WallCheck = false,
+            FOV = 80,
+            WallCheck = true,
             ShowFOV = true,
-            ShowTarget = true,
-            Prediction = false,
-            PredictionAmount = 0.165
+            ShowTarget = true
         },
         Movement = {
             Speed = false,
             SpeedValue = 30,
-            HighJump = false,
+            JumpBoost = false,
             JumpPower = 50,
-            NoClip = false,
-            Fly = false,
-            Dash = false,
-            DashSpeed = 50,
-            DashDuration = 0.3,
-            DashCooldown = 2.0
+            Fly = false
         },
         Visuals = {
             ESP = false,
             Tracers = false,
-            Ambient = false,
-            Trails = false,
-            CustomFOV = false,
-            FOVValue = 70
-        },
-        Misc = {
-            AntiAFK = false,
-            AntiDeath = false,
-            JumpStun = false,
-            Notifications = true
+            Chams = false
         }
     }
 
-    -- Переменные
-    local Tabs = {"Aim", "Movement", "Visuals", "Misc"}
-    local LastShotTime = 0
-    local LastDashTime = 0
-    local IsDashing = false
-    local FlyInstance = nil
-    local ESPInstance = nil
-    local NoclipConnection = nil
-    local TrailInstance = nil
-    local FOVConnection = nil
-    local SnowPart = nil
-    local SnowEmitter = nil
-    local renderSteppedConnection = nil
-
     -- Создаем интерфейс
     local MobileUI = Instance.new("ScreenGui")
-    MobileUI.Name = "MobileUI"
+    MobileUI.Name = "UNLOOSED_MOBILE"
+    MobileUI.ResetOnSpawn = false
     MobileUI.Parent = CoreGui
 
+    -- Главный контейнер
     local MainFrame = Instance.new("Frame")
-    MainFrame.Size = UDim2.new(0, 300, 0, 400)
-    MainFrame.Position = UDim2.new(0.5, -150, 0.5, -200)
-    MainFrame.BackgroundColor3 = ColorScheme.Background
+    MainFrame.Size = UDim2.new(0.9, 0, 0.7, 0)
+    MainFrame.Position = UDim2.new(0.5, 0, 0.5, 0)
+    MainFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+    MainFrame.BackgroundColor3 = Theme.MainColor
     MainFrame.Parent = MobileUI
 
-    local UICorner = Instance.new("UICorner")
-    UICorner.CornerRadius = UDim.new(0, 8)
-    UICorner.Parent = MainFrame
+    local MainCorner = Instance.new("UICorner")
+    MainCorner.CornerRadius = UDim.new(0, 12)
+    MainCorner.Parent = MainFrame
 
-    -- Header
-    local HeaderFrame = Instance.new("Frame")
-    HeaderFrame.Size = UDim2.new(1, 0, 0, 40)
-    HeaderFrame.BackgroundColor3 = ColorScheme.Primary
-    HeaderFrame.Parent = MainFrame
+    local MainStroke = Instance.new("UIStroke")
+    MainStroke.Color = Theme.AccentColor
+    MainStroke.Thickness = 2
+    MainStroke.Parent = MainFrame
+
+    -- Хедер
+    local Header = Instance.new("Frame")
+    Header.Size = UDim2.new(1, 0, 0, 50)
+    Header.BackgroundColor3 = Theme.SecondaryColor
+    Header.Parent = MainFrame
 
     local HeaderCorner = Instance.new("UICorner")
-    HeaderCorner.CornerRadius = UDim.new(0, 8)
-    HeaderCorner.Parent = HeaderFrame
+    HeaderCorner.CornerRadius = UDim.new(0, 12)
+    HeaderCorner.Parent = Header
 
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Text = "UNLOOSED.CC MOBILE"
-    TitleLabel.TextColor3 = ColorScheme.Text
-    TitleLabel.TextSize = 16
-    TitleLabel.Font = Enum.Font.GothamBold
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Size = UDim2.new(0.7, 0, 1, 0)
-    TitleLabel.Position = UDim2.new(0.15, 0, 0, 0)
-    TitleLabel.Parent = HeaderFrame
+    local Title = Instance.new("TextLabel")
+    Title.Text = "UNLOOSED.CC"
+    Title.TextColor3 = Theme.AccentColor
+    Title.TextSize = 20
+    Title.Font = Enum.Font.GothamBold
+    Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(0.6, 0, 1, 0)
+    Title.Position = UDim2.new(0.2, 0, 0, 0)
+    Title.Parent = Header
 
-    -- Кнопки управления
-    local CloseButton = Instance.new("TextButton")
-    CloseButton.Text = "X"
-    CloseButton.TextColor3 = ColorScheme.Text
-    CloseButton.TextSize = 18
-    CloseButton.Font = Enum.Font.GothamBold
-    CloseButton.BackgroundColor3 = ColorScheme.Danger
-    CloseButton.Size = UDim2.new(0, 40, 0, 40)
-    CloseButton.Position = UDim2.new(1, -40, 0, 0)
-    CloseButton.Parent = HeaderFrame
+    -- Кнопка закрытия
+    local CloseBtn = Instance.new("TextButton")
+    CloseBtn.Text = "×"
+    CloseBtn.TextColor3 = Theme.DangerColor
+    CloseBtn.TextSize = 30
+    CloseBtn.Font = Enum.Font.GothamBold
+    CloseBtn.BackgroundTransparency = 1
+    CloseBtn.Size = UDim2.new(0.15, 0, 1, 0)
+    CloseBtn.Position = UDim2.new(0.85, 0, 0, 0)
+    CloseBtn.Parent = Header
 
-    local MinimizeButton = Instance.new("TextButton")
-    MinimizeButton.Text = "_"
-    MinimizeButton.TextColor3 = ColorScheme.Text
-    MinimizeButton.TextSize = 18
-    MinimizeButton.Font = Enum.Font.GothamBold
-    MinimizeButton.BackgroundColor3 = ColorScheme.Secondary
-    MinimizeButton.Size = UDim2.new(0, 40, 0, 40)
-    MinimizeButton.Position = UDim2.new(1, -80, 0, 0)
-    MinimizeButton.Parent = HeaderFrame
+    -- Кнопка сворачивания
+    local MinimizeBtn = Instance.new("TextButton")
+    MinimizeBtn.Text = "-"
+    MinimizeBtn.TextColor3 = Theme.TextColor
+    MinimizeBtn.TextSize = 30
+    MinimizeBtn.Font = Enum.Font.GothamBold
+    MinimizeBtn.BackgroundTransparency = 1
+    MinimizeBtn.Size = UDim2.new(0.15, 0, 1, 0)
+    MinimizeBtn.Position = UDim2.new(0.7, 0, 0, 0)
+    MinimizeBtn.Parent = Header
 
     -- Табы
-    local TabButtonsFrame = Instance.new("Frame")
-    TabButtonsFrame.Size = UDim2.new(1, 0, 0, 40)
-    TabButtonsFrame.Position = UDim2.new(0, 0, 0, 40)
-    TabButtonsFrame.BackgroundTransparency = 1
-    TabButtonsFrame.Parent = MainFrame
+    local TabsContainer = Instance.new("Frame")
+    TabsContainer.Size = UDim2.new(1, 0, 0, 40)
+    TabsContainer.Position = UDim2.new(0, 0, 0, 50)
+    TabsContainer.BackgroundTransparency = 1
+    TabsContainer.Parent = MainFrame
 
-    local ContentFrame = Instance.new("Frame")
-    ContentFrame.Size = UDim2.new(1, 0, 1, -80)
-    ContentFrame.Position = UDim2.new(0, 0, 0, 80)
+    local TabsList = Instance.new("UIListLayout")
+    TabsList.FillDirection = Enum.FillDirection.Horizontal
+    TabsList.Parent = TabsContainer
+
+    -- Контент
+    local ContentFrame = Instance.new("ScrollingFrame")
+    ContentFrame.Size = UDim2.new(1, 0, 1, -90)
+    ContentFrame.Position = UDim2.new(0, 0, 0, 90)
     ContentFrame.BackgroundTransparency = 1
+    ContentFrame.ScrollBarThickness = 4
+    ContentFrame.ScrollBarImageColor3 = Theme.AccentColor
     ContentFrame.Parent = MainFrame
 
-    local ContentScrolling = Instance.new("ScrollingFrame")
-    ContentScrolling.Size = UDim2.new(1, 0, 1, 0)
-    ContentScrolling.BackgroundTransparency = 1
-    ContentScrolling.ScrollBarThickness = 4
-    ContentScrolling.Parent = ContentFrame
+    local ContentList = Instance.new("UIListLayout")
+    ContentList.Padding = UDim.new(0, 8)
+    ContentList.Parent = ContentFrame
 
-    -- Визуализация
-    local FOVCircle = Drawing.new("Circle")
-    FOVCircle.Visible = Settings.Aim.ShowFOV
-    FOVCircle.Thickness = 1
-    FOVCircle.Color = ColorScheme.Primary
-    FOVCircle.Radius = 70
-    FOVCircle.Transparency = 1
-    FOVCircle.Filled = false
+    -- Создаем табы
+    local TabNames = {"AIM", "MOVEMENT", "VISUALS"}
+    local TabFrames = {}
 
-    local TargetIndicator = Drawing.new("Square")
-    TargetIndicator.Visible = false
-    TargetIndicator.Size = Vector2.new(10, 10)
-    TargetIndicator.Color = ColorScheme.Primary
-    TargetIndicator.Filled = true
-    TargetIndicator.Thickness = 1
-
-    -- Функции
-    local function degreesToPixels(degrees)
-        if not Camera then return degrees end
-        local screenHeight = Camera.ViewportSize.Y
-        local radians = math.rad(degrees / 2)
-        local cameraFOVRad = math.rad(Camera.FieldOfView / 2)
-        return math.tan(radians) * (screenHeight / (2 * math.tan(cameraFOVRad)))
+    for i, name in ipairs(TabNames) do
+        -- Кнопка таба
+        local TabBtn = Instance.new("TextButton")
+        TabBtn.Text = name
+        TabBtn.TextColor3 = Theme.TextColor
+        TabBtn.TextSize = 14
+        TabBtn.Font = Enum.Font.GothamMedium
+        TabBtn.BackgroundColor3 = Theme.SecondaryColor
+        TabBtn.Size = UDim2.new(1/#TabNames, -4, 1, 0)
+        TabBtn.Parent = TabsContainer
+        
+        local TabCorner = Instance.new("UICorner")
+        TabCorner.CornerRadius = UDim.new(0, 8)
+        TabCorner.Parent = TabBtn
+        
+        -- Контент таба
+        local TabContent = Instance.new("Frame")
+        TabContent.Size = UDim2.new(1, 0, 0, 0)
+        TabContent.AutomaticSize = Enum.AutomaticSize.Y
+        TabContent.BackgroundTransparency = 1
+        TabContent.Visible = i == 1
+        TabContent.Parent = ContentFrame
+        
+        TabFrames[name] = TabContent
+        
+        -- Обработчик нажатия
+        TabBtn.MouseButton1Click:Connect(function()
+            for _, frame in pairs(TabFrames) do
+                frame.Visible = false
+            end
+            TabContent.Visible = true
+        end)
     end
 
-    local function SafeGetClosestPlayer()
-        if not Camera or not LocalPlayer or not LocalPlayer.Character then return nil end
+    -- Функция создания переключателя
+    local function CreateToggle(parent, name, settingTable, settingName, callback)
+        local ToggleFrame = Instance.new("Frame")
+        ToggleFrame.Size = UDim2.new(1, -20, 0, 50)
+        ToggleFrame.BackgroundColor3 = Theme.SecondaryColor
+        ToggleFrame.Parent = parent
         
-        local closestPlayer = nil
-        local shortestDistance = math.huge
+        local ToggleCorner = Instance.new("UICorner")
+        ToggleCorner.CornerRadius = UDim.new(0, 8)
+        ToggleCorner.Parent = ToggleFrame
         
-        for _, player in ipairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local humanoid = player.Character:FindFirstChild("Humanoid")
-                local head = player.Character:FindFirstChild("Head")
+        local ToggleLabel = Instance.new("TextLabel")
+        ToggleLabel.Text = name
+        ToggleLabel.TextColor3 = Theme.TextColor
+        ToggleLabel.TextSize = 16
+        ToggleLabel.Font = Enum.Font.Gotham
+        ToggleLabel.TextXAlignment = Enum.TextXAlignment.Left
+        ToggleLabel.BackgroundTransparency = 1
+        ToggleLabel.Size = UDim2.new(0.7, 0, 1, 0)
+        ToggleLabel.Position = UDim2.new(0.1, 0, 0, 0)
+        ToggleLabel.Parent = ToggleFrame
+        
+        local ToggleBtn = Instance.new("Frame")
+        ToggleBtn.Size = UDim2.new(0.2, 0, 0.6, 0)
+        ToggleBtn.Position = UDim2.new(0.75, 0, 0.2, 0)
+        ToggleBtn.BackgroundColor3 = Settings[settingTable][settingName] and Theme.SuccessColor or Theme.DangerColor
+        ToggleBtn.Parent = ToggleFrame
+        
+        local ToggleBtnCorner = Instance.new("UICorner")
+        ToggleBtnCorner.CornerRadius = UDim.new(1, 0)
+        ToggleBtnCorner.Parent = ToggleBtn
+        
+        -- Обработчик нажатия
+        ToggleFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                Settings[settingTable][settingName] = not Settings[settingTable][settingName]
                 
-                if humanoid and humanoid.Health > 0 and head then
-                    local screenPoint, onScreen = Camera:WorldToViewportPoint(head.Position)
-                    
-                    if onScreen then
-                        local mousePos = UserInputService:GetMouseLocation()
-                        local distance = (Vector2.new(mousePos.X, mousePos.Y) - Vector2.new(screenPoint.X, screenPoint.Y))
-                        
-                        if distance.Magnitude < shortestDistance and distance.Magnitude <= FOVCircle.Radius then
-                            closestPlayer = player
-                            shortestDistance = distance.Magnitude
-                        end
-                    end
+                local tween = TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {
+                    BackgroundColor3 = Settings[settingTable][settingName] and Theme.SuccessColor or Theme.DangerColor
+                })
+                tween:Play()
+                
+                if callback then
+                    callback(Settings[settingTable][settingName])
                 end
+            end
+        end)
+    end
+
+    -- Функция создания слайдера
+    local function CreateSlider(parent, name, settingTable, settingName, min, max, callback)
+        local SliderFrame = Instance.new("Frame")
+        SliderFrame.Size = UDim2.new(1, -20, 0, 70)
+        SliderFrame.BackgroundColor3 = Theme.SecondaryColor
+        SliderFrame.Parent = parent
+        
+        local SliderCorner = Instance.new("UICorner")
+        SliderCorner.CornerRadius = UDim.new(0, 8)
+        SliderCorner.Parent = SliderFrame
+        
+        local SliderLabel = Instance.new("TextLabel")
+        SliderLabel.Text = name
+        SliderLabel.TextColor3 = Theme.TextColor
+        SliderLabel.TextSize = 16
+        SliderLabel.Font = Enum.Font.Gotham
+        SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+        SliderLabel.BackgroundTransparency = 1
+        SliderLabel.Size = UDim2.new(1, -20, 0, 20)
+        SliderLabel.Position = UDim2.new(0.1, 0, 0, 5)
+        SliderLabel.Parent = SliderFrame
+        
+        local SliderValue = Instance.new("TextLabel")
+        SliderValue.Text = tostring(Settings[settingTable][settingName])
+        SliderValue.TextColor3 = Theme.AccentColor
+        SliderValue.TextSize = 16
+        SliderValue.Font = Enum.Font.GothamMedium
+        SliderValue.TextXAlignment = Enum.TextXAlignment.Right
+        SliderValue.BackgroundTransparency = 1
+        SliderValue.Size = UDim2.new(1, -20, 0, 20)
+        SliderValue.Position = UDim2.new(0, 10, 0, 5)
+        SliderValue.Parent = SliderFrame
+        
+        local SliderTrack = Instance.new("Frame")
+        SliderTrack.Size = UDim2.new(1, -20, 0, 6)
+        SliderTrack.Position = UDim2.new(0, 10, 0, 40)
+        SliderTrack.BackgroundColor3 = Theme.MainColor
+        SliderTrack.Parent = SliderFrame
+        
+        local SliderTrackCorner = Instance.new("UICorner")
+        SliderTrackCorner.CornerRadius = UDim.new(1, 0)
+        SliderTrackCorner.Parent = SliderTrack
+        
+        local SliderFill = Instance.new("Frame")
+        SliderFill.Size = UDim2.new((Settings[settingTable][settingName] - min)/(max - min), 0, 1, 0)
+        SliderFill.BackgroundColor3 = Theme.AccentColor
+        SliderFill.Parent = SliderTrack
+        
+        local SliderFillCorner = Instance.new("UICorner")
+        SliderFillCorner.CornerRadius = UDim.new(1, 0)
+        SliderFillCorner.Parent = SliderFill
+        
+        local SliderBtn = Instance.new("Frame")
+        SliderBtn.Size = UDim2.new(0, 16, 0, 16)
+        SliderBtn.Position = UDim2.new((Settings[settingTable][settingName] - min)/(max - min), -8, 0.5, -8)
+        SliderBtn.BackgroundColor3 = Theme.TextColor
+        SliderBtn.Parent = SliderTrack
+        
+        local SliderBtnCorner = Instance.new("UICorner")
+        SliderBtnCorner.CornerRadius = UDim.new(1, 0)
+        SliderBtnCorner.Parent = SliderBtn
+        
+        local dragging = false
+        
+        local function UpdateSlider(input)
+            local sliderPos = (input.Position.X - SliderTrack.AbsolutePosition.X)/SliderTrack.AbsoluteSize.X
+            sliderPos = math.clamp(sliderPos, 0, 1)
+            local value = math.floor(min + (max - min) * sliderPos)
+            
+            Settings[settingTable][settingName] = value
+            SliderValue.Text = tostring(value)
+            SliderFill.Size = UDim2.new(sliderPos, 0, 1, 0)
+            SliderBtn.Position = UDim2.new(sliderPos, -8, 0.5, -8)
+            
+            if callback then
+                callback(value)
             end
         end
         
-        return closestPlayer
+        SliderBtn.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                UpdateSlider(input)
+            end
+        end)
+        
+        UserInputService.InputChanged:Connect(function(input)
+            if dragging and input.UserInputType == Enum.UserInputType.Touch then
+                UpdateSlider(input)
+            end
+        end)
+        
+        UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
+        end)
     end
 
-    local function UpdateSpeed()
-        if LocalPlayer and LocalPlayer.Character then
+    -- AIM TAB
+    CreateToggle(TabFrames["AIM"], "Silent Aim", "Aim", "SilentAim")
+    CreateToggle(TabFrames["AIM"], "Auto Shoot", "Aim", "AutoShoot")
+    CreateSlider(TabFrames["AIM"], "Hit Chance", "Aim", "HitChance", 0, 100)
+    CreateSlider(TabFrames["AIM"], "FOV Size", "Aim", "FOV", 10, 200)
+    CreateToggle(TabFrames["AIM"], "Wall Check", "Aim", "WallCheck")
+    CreateToggle(TabFrames["AIM"], "Show FOV", "Aim", "ShowFOV")
+    CreateToggle(TabFrames["AIM"], "Show Target", "Aim", "ShowTarget")
+
+    -- MOVEMENT TAB
+    CreateToggle(TabFrames["MOVEMENT"], "Speed Hack", "Movement", "Speed", function(value)
+        if LocalPlayer.Character then
             local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
             if humanoid then
-                humanoid.WalkSpeed = Settings.Movement.Speed and Settings.Movement.SpeedValue or 16
+                humanoid.WalkSpeed = value and Settings.Movement.SpeedValue or 16
             end
         end
-    end
-
-    local function PerformDash()
-        local currentTime = tick()
-        if Settings.Movement.Dash and not IsDashing and currentTime - LastDashTime >= Settings.Movement.DashCooldown then
-            IsDashing = true
-            LastDashTime = currentTime
-            
-            if LocalPlayer and LocalPlayer.Character then
-                local rootPart = LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-                local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
-                
-                if rootPart and humanoid then
-                    local moveDirection = humanoid.MoveDirection
-                    if moveDirection.Magnitude == 0 then
-                        moveDirection = rootPart.CFrame.LookVector
-                    end
-                    
-                    local startTime = tick()
-                    local dashConnection
-                    dashConnection = RunService.Heartbeat:Connect(function(deltaTime)
-                        if tick() - startTime >= Settings.Movement.DashDuration or not LocalPlayer.Character then
-                            IsDashing = false
-                            if dashConnection then dashConnection:Disconnect() end
-                            return
-                        end
-                        
-                        if rootPart then
-                            rootPart.CFrame = rootPart.CFrame + (moveDirection * Settings.Movement.DashSpeed * deltaTime)
-                        end
-                    end)
-                end
-            end
-        end
-    end
-
-    -- Создаем элементы интерфейса
-    for _, tabName in ipairs(Tabs) do
-        -- Создаем кнопки табов
-        local tabButton = Instance.new("TextButton")
-        tabButton.Text = tabName
-        tabButton.TextColor3 = ColorScheme.Text
-        tabButton.TextSize = 14
-        tabButton.Font = Enum.Font.Gotham
-        tabButton.BackgroundColor3 = ColorScheme.Secondary
-        tabButton.Size = UDim2.new(1/#Tabs, 0, 1, 0)
-        tabButton.Position = UDim2.new((table.find(Tabs, tabName)-1)/#Tabs, 0, 0, 0)
-        tabButton.Parent = TabButtonsFrame
-        
-        -- Создаем контент табов
-        local tabContent = Instance.new("Frame")
-        tabContent.Name = tabName
-        tabContent.Size = UDim2.new(1, 0, 0, 0)
-        tabContent.AutomaticSize = Enum.AutomaticSize.Y
-        tabContent.BackgroundTransparency = 1
-        tabContent.Visible = tabName == "Aim"
-        tabContent.Parent = ContentScrolling
-        
-        -- Добавляем элементы для каждого таба
-        if tabName == "Aim" then
-            -- Здесь будут элементы для Aim таба
-        elseif tabName == "Movement" then
-            -- Здесь будут элементы для Movement таба
-        elseif tabName == "Visuals" then
-            -- Здесь будут элементы для Visuals таба
-        elseif tabName == "Misc" then
-            -- Здесь будут элементы для Misc таба
-        end
-    end
-
-    -- Основной цикл
-    renderSteppedConnection = RunService.RenderStepped:Connect(function()
-        pcall(function()
-            -- Обновляем FOV круг
-            if FOVCircle then
-                FOVCircle.Position = UserInputService:GetMouseLocation()
-                FOVCircle.Radius = degreesToPixels(Settings.Aim.FOV)
-                FOVCircle.Visible = Settings.Aim.ShowFOV
-            end
-            
-            -- Получаем цель
-            local target = SafeGetClosestPlayer()
-            
-            -- Обновляем индикатор цели
-            if TargetIndicator then
-                TargetIndicator.Visible = Settings.Aim.ShowTarget and Settings.Aim.SilentAim and target ~= nil
-                if target and target.Character then
-                    local head = target.Character:FindFirstChild("Head")
-                    if head then
-                        local screenPoint = Camera:WorldToViewportPoint(head.Position)
-                        TargetIndicator.Position = Vector2.new(screenPoint.X, screenPoint.Y)
-                    end
-                end
-            end
-            
-            -- Auto Shoot
-            if Settings.Aim.SilentAim and Settings.Aim.AutoShoot then
-                local currentTime = tick()
-                if currentTime - LastShotTime >= (1 / 10) then -- 10 CPS
-                    if target and math.random(1, 100) <= Settings.Aim.HitChance then
-                        pcall(function()
-                            mouse1press()
-                            mouse1release()
-                        end)
-                        LastShotTime = currentTime
-                    end
-                end
-            end
-            
-            -- Обновляем скорость
-            if Settings.Movement.Speed then
-                UpdateSpeed()
-            end
-        end)
     end)
+    
+    CreateSlider(TabFrames["MOVEMENT"], "Speed Value", "Movement", "SpeedValue", 16, 100, function(value)
+        if Settings.Movement.Speed and LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.WalkSpeed = value
+            end
+        end
+    end)
+    
+    CreateToggle(TabFrames["MOVEMENT"], "Jump Boost", "Movement", "JumpBoost", function(value)
+        if LocalPlayer.Character then
+            local humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                humanoid.JumpPower = value and Settings.Movement.JumpPower or 50
+            end
+        end
+    end)
+    
+    CreateSlider(TabFrames["MOVEMENT"], "Jump Power", "Movement", "JumpPower", 20, 200)
+    CreateToggle(TabFrames["MOVEMENT"], "Fly", "Movement", "Fly")
 
-    -- Обработчики событий
-    CloseButton.MouseButton1Click:Connect(function()
+    -- VISUALS TAB
+    CreateToggle(TabFrames["VISUALS"], "ESP", "Visuals", "ESP")
+    CreateToggle(TabFrames["VISUALS"], "Tracers", "Visuals", "Tracers")
+    CreateToggle(TabFrames["VISUALS"], "Chams", "Visuals", "Chams")
+
+    -- Обработчики кнопок
+    CloseBtn.MouseButton1Click:Connect(function()
         MobileUI:Destroy()
-        if renderSteppedConnection then
-            renderSteppedConnection:Disconnect()
-        end
     end)
 
-    MinimizeButton.MouseButton1Click:Connect(function()
-        MainFrame.Size = UDim2.new(0, 300, 0, 40)
-        MinimizeButton.Text = "+"
-        MinimizeButton.MouseButton1Click:Connect(function()
-            MainFrame.Size = UDim2.new(0, 300, 0, 400)
-            MinimizeButton.Text = "_"
+    MinimizeBtn.MouseButton1Click:Connect(function()
+        MainFrame.Size = UDim2.new(0.9, 0, 0, 50)
+        MinimizeBtn.Text = "+"
+        MinimizeBtn.MouseButton1Click:Connect(function()
+            MainFrame.Size = UDim2.new(0.9, 0, 0.7, 0)
+            MinimizeBtn.Text = "-"
         end)
     end)
 
-    -- Очистка при закрытии
-    game:BindToClose(function()
-        if renderSteppedConnection then
-            renderSteppedConnection:Disconnect()
+    -- Перемещение интерфейса
+    local draggingUI = false
+    local dragStart, startPos
+
+    Header.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            draggingUI = true
+            dragStart = input.Position
+            startPos = MainFrame.Position
         end
-        pcall(function()
-            if FOVCircle then FOVCircle:Remove() end
-            if TargetIndicator then TargetIndicator:Remove() end
-            MobileUI:Destroy()
-        end)
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if draggingUI and input.UserInputType == Enum.UserInputType.Touch then
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    UserInputService.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.Touch then
+            draggingUI = false
+        end
     end)
 
     -- Уведомление о загрузке
-    local notification = Instance.new("TextLabel")
-    notification.Text = "UNLOOSED.CC LOADED!"
-    notification.TextColor3 = Color3.fromRGB(0, 255, 0)
-    notification.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    notification.Size = UDim2.new(0, 200, 0, 30)
-    notification.Position = UDim2.new(0.5, -100, 0.8, 0)
-    notification.Parent = CoreGui
+    local Notification = Instance.new("TextLabel")
+    Notification.Text = "UNLOOSED.CC LOADED!"
+    Notification.TextColor3 = Color3.fromRGB(0, 255, 0)
+    Notification.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    Notification.Size = UDim2.new(0, 200, 0, 40)
+    Notification.Position = UDim2.new(0.5, -100, 0.8, 0)
+    Notification.AnchorPoint = Vector2.new(0.5, 0.5)
+    Notification.Parent = CoreGui
 
-    game:GetService("TweenService"):Create(notification, TweenInfo.new(3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
-    task.delay(3, function() notification:Destroy() end)
+    local NotifCorner = Instance.new("UICorner")
+    NotifCorner.CornerRadius = UDim.new(0, 8)
+    NotifCorner.Parent = Notification
+
+    TweenService:Create(Notification, TweenInfo.new(3), {TextTransparency = 1, BackgroundTransparency = 1}):Play()
+    task.delay(3, function() Notification:Destroy() end)
 end
 
 -- Запускаем с защитой от ошибок
 local success, err = pcall(Main)
 if not success then
     warn("Script error: " .. tostring(err))
-    local errorNotification = Instance.new("TextLabel")
-    errorNotification.Text = "Error: " .. tostring(err)
-    errorNotification.TextColor3 = Color3.fromRGB(255, 0, 0)
-    errorNotification.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    errorNotification.Size = UDim2.new(0, 300, 0, 50)
-    errorNotification.Position = UDim2.new(0.5, -150, 0.5, -25)
-    errorNotification.Parent = game:GetService("CoreGui")
-    task.delay(5, function() errorNotification:Destroy() end)
+    local ErrorNotif = Instance.new("TextLabel")
+    ErrorNotif.Text = "ERROR: " .. tostring(err)
+    ErrorNotif.TextColor3 = Color3.fromRGB(255, 50, 50)
+    ErrorNotif.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    ErrorNotif.Size = UDim2.new(0.8, 0, 0, 60)
+    ErrorNotif.Position = UDim2.new(0.5, 0, 0.5, 0)
+    ErrorNotif.AnchorPoint = Vector2.new(0.5, 0.5)
+    ErrorNotif.Parent = game:GetService("CoreGui")
+    
+    task.delay(5, function() ErrorNotif:Destroy() end)
 end
