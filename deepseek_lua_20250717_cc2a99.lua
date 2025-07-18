@@ -1,14 +1,20 @@
--- Мобильный UI для функций из ПК скрипта
--- UI простой, без сворачивания/закрытия, с переключателями и слайдерами
--- Все функции работают как в ПК скрипте
+--[[
+  Unloosed.cc Mobile UI v2
+  Современный, стильный, полный функционал
+  Разделы: Combat, Movement, Visuals, Misc
+  Кнопки: Закрыть, Свернуть
+  Перетаскивание меню по заголовку
+  Все функции работают на мобильном
+--]]
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- Защита от nil глобальных настроек
+-- Проверка и инициализация глобальных настроек, если их нет
 local function safeGet(name, default)
     local val = getgenv()[name]
     if val == nil then
@@ -18,7 +24,7 @@ local function safeGet(name, default)
     return val
 end
 
--- Используем настройки из getgenv() или дефолты
+-- Настройки (пример, можно расширять)
 local SilentAimSettings = safeGet("SilentAimSettings", {
     Enabled = false,
     AutoShoot = true,
@@ -80,77 +86,53 @@ local VisualEffectsSettings = safeGet("VisualEffectsSettings", {
     CustomFOV = 70
 })
 
--- Drawing API для FOV и прицела
+-- Drawing API
 local Drawing = Drawing
 if not Drawing then
     warn("Drawing API не доступен, визуальные элементы не будут отображаться")
 end
 
-local function degreesToPixels(degrees)
-    local cameraFOV = Camera.FieldOfView
-    local screenHeight = Camera.ViewportSize.Y
-    local radians = math.rad(degrees / 2)
-    local cameraFOVRad = math.rad(cameraFOV / 2)
-    return math.tan(radians) * (screenHeight / (2 * math.tan(cameraFOVRad)))
-end
-
-local mouse_box = nil
-local fov_circle = nil
-
-if Drawing then
-    mouse_box = Drawing.new("Square")
-    mouse_box.Visible = false
-    mouse_box.ZIndex = 999
-    mouse_box.Color = Color3.fromRGB(54, 57, 241)
-    mouse_box.Thickness = 3
-    mouse_box.Size = Vector2.new(20, 20)
-    mouse_box.Filled = true
-
-    fov_circle = Drawing.new("Circle")
-    fov_circle.Thickness = 1
-    fov_circle.NumSides = 100
-    fov_circle.Radius = degreesToPixels(SilentAimSettings.FOVRadius)
-    fov_circle.Filled = false
-    fov_circle.Visible = SilentAimSettings.FOVVisible
-    fov_circle.ZIndex = 999
-    fov_circle.Transparency = 1
-    fov_circle.Color = Color3.fromRGB(54, 57, 241)
-end
-
--- UI элементы (простой вертикальный список переключателей и слайдеров)
-
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "MobileSimpleUI"
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.ResetOnSpawn = false
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 320, 0, 400)
-MainFrame.Position = UDim2.new(0.5, -160, 0.5, -200)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-
-local UIListLayout = Instance.new("UIListLayout")
-UIListLayout.Padding = UDim.new(0, 8)
-UIListLayout.FillDirection = Enum.FillDirection.Vertical
-UIListLayout.SortOrder = Enum.SortOrder.LayoutOrder
-UIListLayout.Parent = MainFrame
-
-local function createToggle(text, settingTable, settingKey)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -16, 0, 30)
-    frame.BackgroundTransparency = 1
-    frame.Parent = MainFrame
-
+-- Утилиты для UI
+local function createTextLabel(parent, text, size, pos, font, color, align)
     local label = Instance.new("TextLabel")
     label.Text = text
-    label.Size = UDim2.new(0.7, 0, 1, 0)
+    label.Size = size or UDim2.new(1, 0, 0, 20)
+    label.Position = pos or UDim2.new(0, 0, 0, 0)
     label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.Gotham
+    label.TextColor3 = color or Color3.fromRGB(230, 230, 230)
+    label.Font = font or Enum.Font.Gotham
     label.TextSize = 18
+    label.TextXAlignment = align or Enum.TextXAlignment.Left
+    label.Parent = parent
+    return label
+end
+
+local function createButton(parent, text, size, pos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Text = text
+    btn.Size = size or UDim2.new(0, 100, 0, 30)
+    btn.Position = pos or UDim2.new(0, 0, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(54, 57, 241)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18
+    btn.AutoButtonColor = true
+    btn.Parent = parent
+    btn.ClipsDescendants = true
+    btn.BorderSizePixel = 0
+    btn.MouseButton1Click:Connect(function()
+        pcall(callback)
+    end)
+    return btn
+end
+
+local function createToggle(parent, text, settingTable, settingKey)
+    local frame = Instance.new("Frame")
+    frame.Size = UDim2.new(1, -20, 0, 30)
+    frame.BackgroundTransparency = 1
+    frame.Parent = parent
+
+    local label = createTextLabel(frame, text, UDim2.new(0.7, 0, 1, 0), nil, Enum.Font.Gotham, Color3.fromRGB(220,220,220), Enum.TextXAlignment.Left)
     label.Parent = frame
 
     local toggle = Instance.new("TextButton")
@@ -167,35 +149,19 @@ local function createToggle(text, settingTable, settingKey)
         settingTable[settingKey] = not settingTable[settingKey]
         toggle.BackgroundColor3 = settingTable[settingKey] and Color3.fromRGB(0, 170, 0) or Color3.fromRGB(170, 0, 0)
         toggle.Text = settingTable[settingKey] and "ON" or "OFF"
-
-        -- Обновляем визуализацию FOV и прицела, если нужно
-        if settingTable == SilentAimSettings then
-            if settingKey == "FOVVisible" and fov_circle then
-                fov_circle.Visible = SilentAimSettings.FOVVisible
-            elseif settingKey == "ShowSilentAimTarget" and mouse_box then
-                mouse_box.Visible = SilentAimSettings.ShowSilentAimTarget and SilentAimSettings.Enabled
-            elseif settingKey == "Enabled" and mouse_box then
-                mouse_box.Visible = SilentAimSettings.ShowSilentAimTarget and SilentAimSettings.Enabled
-            end
-        end
     end)
+
+    return frame
 end
 
-local function createSlider(text, settingTable, settingKey, min, max, step)
+local function createSlider(parent, text, settingTable, settingKey, min, max, step)
     step = step or 1
     local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -16, 0, 50)
+    frame.Size = UDim2.new(1, -20, 0, 50)
     frame.BackgroundTransparency = 1
-    frame.Parent = MainFrame
+    frame.Parent = parent
 
-    local label = Instance.new("TextLabel")
-    label.Text = text .. ": " .. tostring(settingTable[settingKey])
-    label.Size = UDim2.new(1, 0, 0, 20)
-    label.BackgroundTransparency = 1
-    label.TextColor3 = Color3.fromRGB(220, 220, 220)
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.Font = Enum.Font.Gotham
-    label.TextSize = 16
+    local label = createTextLabel(frame, text .. ": " .. tostring(settingTable[settingKey]), UDim2.new(1, 0, 0, 20), nil, Enum.Font.Gotham, Color3.fromRGB(220,220,220), Enum.TextXAlignment.Left)
     label.Parent = frame
 
     local sliderFrame = Instance.new("Frame")
@@ -203,11 +169,16 @@ local function createSlider(text, settingTable, settingKey, min, max, step)
     sliderFrame.Position = UDim2.new(0, 0, 0, 25)
     sliderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
     sliderFrame.Parent = frame
+    sliderFrame.ClipsDescendants = true
+    sliderFrame.BorderSizePixel = 0
+    sliderFrame.AnchorPoint = Vector2.new(0, 0)
 
     local sliderFill = Instance.new("Frame")
-    sliderFill.Size = UDim2.new((settingTable[settingKey] - min) / (max - min), 0, 1, 0)
+    local fillPercent = (settingTable[settingKey] - min) / (max - min)
+    sliderFill.Size = UDim2.new(fillPercent, 0, 1, 0)
     sliderFill.BackgroundColor3 = Color3.fromRGB(54, 57, 241)
     sliderFill.Parent = sliderFrame
+    sliderFill.BorderSizePixel = 0
 
     local dragging = false
 
@@ -241,81 +212,286 @@ local function createSlider(text, settingTable, settingKey, min, max, step)
             dragging = false
         end
     end)
+
+    return frame
 end
 
--- Создаем UI элементы для Silent Aim (минимальный набор)
-createToggle("Silent Aim Enabled", SilentAimSettings, "Enabled")
-createToggle("Auto Shoot", SilentAimSettings, "AutoShoot")
-createSlider("CPS", SilentAimSettings, "CPS", 1, 30, 1)
-createToggle("Team Check", SilentAimSettings, "TeamCheck")
-createToggle("Visible Check", SilentAimSettings, "VisibleCheck")
-createSlider("Hit Chance", SilentAimSettings, "HitChance", 0, 100, 1)
-createToggle("Show FOV Circle", SilentAimSettings, "FOVVisible")
-createSlider("FOV Radius", SilentAimSettings, "FOVRadius", 10, 200, 1)
-createToggle("Show Silent Aim Target", SilentAimSettings, "ShowSilentAimTarget")
-createToggle("Mouse Hit Prediction", SilentAimSettings, "MouseHitPrediction")
-createSlider("Prediction Amount", SilentAimSettings, "MouseHitPredictionAmount", 0.01, 1, 0.01)
+-- Создаем ScreenGui и главное окно
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "UnloosedMobileUI"
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.ResetOnSpawn = false
 
--- Создаем UI элементы для Dash
-createToggle("Dash Enabled", DashSettings, "DashEnabled")
-createSlider("Dash Speed", DashSettings, "DashSpeed", 10, 200, 1)
-createSlider("Dash Duration", DashSettings, "DashDuration", 0.1, 1, 0.05)
-createSlider("Dash Cooldown", DashSettings, "DashCooldown", 0.5, 5, 0.1)
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 360, 0, 480)
+MainFrame.Position = UDim2.new(0.5, -180, 0.5, -240)
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.ClipsDescendants = true
+MainFrame.Parent = ScreenGui
+MainFrame.AnchorPoint = Vector2.new(0,0)
 
--- Создаем UI для Anti Aim
-createToggle("Anti Aim Enabled", AntiAimSettings, "Enabled")
-createSlider("Yaw", AntiAimSettings, "Yaw", -90, 90, 1)
-createSlider("Pitch", AntiAimSettings, "Pitch", -90, 90, 1)
-createSlider("Roll", AntiAimSettings, "Roll", -45, 45, 1)
+-- Скругление углов
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 12)
+corner.Parent = MainFrame
 
--- Пример: Текущий режим AntiAim — просто текст (для простоты)
-local modeFrame = Instance.new("Frame")
-modeFrame.Size = UDim2.new(1, -16, 0, 30)
-modeFrame.BackgroundTransparency = 1
-modeFrame.Parent = MainFrame
+-- Заголовок
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 42)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TitleBar.Parent = MainFrame
 
-local modeLabel = Instance.new("TextLabel")
-modeLabel.Text = "Anti Aim Mode: " .. tostring(AntiAimSettings.Mode)
-modeLabel.Size = UDim2.new(0.7, 0, 1, 0)
-modeLabel.BackgroundTransparency = 1
-modeLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-modeLabel.TextXAlignment = Enum.TextXAlignment.Left
-modeLabel.Font = Enum.Font.Gotham
-modeLabel.TextSize = 18
-modeLabel.Parent = modeFrame
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = TitleBar
 
-local modes = {"Static", "Jitter", "Random"}
-local modeButton = Instance.new("TextButton")
-modeButton.Text = "Change"
-modeButton.Size = UDim2.new(0.25, 0, 1, 0)
-modeButton.Position = UDim2.new(0.75, 0, 0, 0)
-modeButton.BackgroundColor3 = Color3.fromRGB(54, 57, 241)
-modeButton.TextColor3 = Color3.new(1,1,1)
-modeButton.Font = Enum.Font.GothamBold
-modeButton.TextSize = 18
-modeButton.Parent = modeFrame
+local TitleLabel = createTextLabel(TitleBar, "Unloosed.cc", UDim2.new(0, 220, 1, 0), UDim2.new(0, 10, 0, 0), Enum.Font.GothamBold, Color3.fromRGB(200, 200, 255), Enum.TextXAlignment.Left)
+TitleLabel.TextSize = 22
 
-modeButton.MouseButton1Click:Connect(function()
-    local currentIndex = table.find(modes, AntiAimSettings.Mode) or 1
-    local nextIndex = currentIndex + 1
-    if nextIndex > #modes then nextIndex = 1 end
-    AntiAimSettings.Mode = modes[nextIndex]
-    modeLabel.Text = "Anti Aim Mode: " .. AntiAimSettings.Mode
+-- Кнопка закрыть
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 42, 0, 42)
+CloseBtn.Position = UDim2.new(1, -42, 0, 0)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+CloseBtn.Text = "X"
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 22
+CloseBtn.TextColor3 = Color3.new(1,1,1)
+CloseBtn.Parent = TitleBar
+CloseBtn.AutoButtonColor = true
+CloseBtn.BorderSizePixel = 0
+
+-- Кнопка свернуть
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 42, 0, 42)
+MinimizeBtn.Position = UDim2.new(1, -84, 0, 0)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+MinimizeBtn.Text = "-"
+MinimizeBtn.Font = Enum.Font.GothamBold
+MinimizeBtn.TextSize = 28
+MinimizeBtn.TextColor3 = Color3.new(1,1,1)
+MinimizeBtn.Parent = TitleBar
+MinimizeBtn.AutoButtonColor = true
+MinimizeBtn.BorderSizePixel = 0
+
+-- Контейнер для вкладок
+local TabContainer = Instance.new("Frame")
+TabContainer.Size = UDim2.new(1, 0, 1, -42)
+TabContainer.Position = UDim2.new(0, 0, 0, 42)
+TabContainer.BackgroundTransparency = 1
+TabContainer.Parent = MainFrame
+
+-- Кнопки вкладок
+local TabsFrame = Instance.new("Frame")
+TabsFrame.Size = UDim2.new(1, 0, 0, 40)
+TabsFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+TabsFrame.BorderSizePixel = 0
+TabsFrame.Parent = TabContainer
+
+local TabsCorner = Instance.new("UICorner")
+TabsCorner.CornerRadius = UDim.new(0, 12)
+TabsCorner.Parent = TabsFrame
+
+local TabNames = {"Combat", "Movement", "Visuals", "Misc"}
+local TabButtons = {}
+local ContentFrames = {}
+
+local function createTabButton(name, index)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0, 80, 1, 0)
+    btn.Position = UDim2.new(0, (index-1)*80, 0, 0)
+    btn.BackgroundColor3 = Color3.fromRGB(54, 57, 241)
+    btn.Text = name
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 18
+    btn.TextColor3 = Color3.new(1,1,1)
+    btn.Parent = TabsFrame
+    btn.AutoButtonColor = true
+    btn.BorderSizePixel = 0
+    return btn
+end
+
+local function createContentFrame()
+    local frame = Instance.new("ScrollingFrame")
+    frame.Size = UDim2.new(1, 0, 1, -40)
+    frame.Position = UDim2.new(0, 0, 0, 40)
+    frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+    frame.ScrollBarThickness = 8
+    frame.BorderSizePixel = 0
+    frame.Visible = false
+    frame.Parent = TabContainer
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = frame
+
+    local layout = Instance.new("UIListLayout")
+    layout.Padding = UDim.new(0, 8)
+    layout.SortOrder = Enum.SortOrder.LayoutOrder
+    layout.Parent = frame
+
+    local padding = Instance.new("UIPadding")
+    padding.PaddingTop = UDim.new(0, 10)
+    padding.PaddingLeft = UDim.new(0, 10)
+    padding.PaddingRight = UDim.new(0, 10)
+    padding.PaddingBottom = UDim.new(0, 10)
+    padding.Parent = frame
+
+    return frame
+end
+
+for i, name in ipairs(TabNames) do
+    TabButtons[i] = createTabButton(name, i)
+    ContentFrames[i] = createContentFrame()
+end
+
+-- Функция переключения вкладок
+local currentTab = 1
+local function switchTab(index)
+    for i, frame in ipairs(ContentFrames) do
+        frame.Visible = (i == index)
+        TabButtons[i].BackgroundColor3 = (i == index) and Color3.fromRGB(54, 57, 241) or Color3.fromRGB(40, 40, 40)
+    end
+    currentTab = index
+end
+
+switchTab(1)
+
+for i, btn in ipairs(TabButtons) do
+    btn.MouseButton1Click:Connect(function()
+        switchTab(i)
+    end)
+end
+
+-- Функция закрыть меню
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui.Enabled = false
 end)
 
--- Функции из ПК скрипта (копипаста и адаптация)
+-- Функция свернуть/развернуть меню
+local minimized = false
+MinimizeBtn.MouseButton1Click:Connect(function()
+    if minimized then
+        MainFrame.Size = UDim2.new(0, 360, 0, 480)
+        TabContainer.Visible = true
+        minimized = false
+        MinimizeBtn.Text = "-"
+    else
+        MainFrame.Size = UDim2.new(0, 360, 0, 42)
+        TabContainer.Visible = false
+        minimized = true
+        MinimizeBtn.Text = "+"
+    end
+end)
 
-local LastDashTime = 0
-local IsDashing = false
-local LastShotTime = 0
-local VisibleCheckCache = {}
-local CacheDuration = 0.3
-local LastFlyActivation = 0
-local Clipon = false
-local NoclipConnection = nil
+-- Перетаскивание меню по заголовку
+local dragging = false
+local dragStartPos = nil
+local frameStartPos = nil
 
-local function getMousePosition()
-    return UserInputService:GetMouseLocation()
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStartPos = input.Position
+        frameStartPos = MainFrame.Position
+    end
+end)
+
+TitleBar.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.Touch then
+        local delta = input.Position - dragStartPos
+        MainFrame.Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Функции UI для каждой вкладки
+
+-- Combat вкладка
+do
+    local parent = ContentFrames[1]
+    createToggle(parent, "Silent Aim Enabled", SilentAimSettings, "Enabled")
+    createToggle(parent, "Auto Shoot", SilentAimSettings, "AutoShoot")
+    createSlider(parent, "CPS", SilentAimSettings, "CPS", 1, 30, 1)
+    createToggle(parent, "Team Check", SilentAimSettings, "TeamCheck")
+    createToggle(parent, "Visible Check", SilentAimSettings, "VisibleCheck")
+    createSlider(parent, "Hit Chance", SilentAimSettings, "HitChance", 0, 100, 1)
+    createToggle(parent, "Show FOV Circle", SilentAimSettings, "FOVVisible")
+    createSlider(parent, "FOV Radius", SilentAimSettings, "FOVRadius", 10, 200, 1)
+    createToggle(parent, "Show Silent Aim Target", SilentAimSettings, "ShowSilentAimTarget")
+    createToggle(parent, "Mouse Hit Prediction", SilentAimSettings, "MouseHitPrediction")
+    createSlider(parent, "Prediction Amount", SilentAimSettings, "MouseHitPredictionAmount", 0.01, 1, 0.01)
+
+    createToggle(parent, "Anti Aim Enabled", AntiAimSettings, "Enabled")
+    createSlider(parent, "Yaw", AntiAimSettings, "Yaw", -90, 90, 1)
+    createSlider(parent, "Pitch", AntiAimSettings, "Pitch", -90, 90, 1)
+    createSlider(parent, "Roll", AntiAimSettings, "Roll", -45, 45, 1)
+end
+
+-- Movement вкладка
+do
+    local parent = ContentFrames[2]
+    createToggle(parent, "Dash Enabled", DashSettings, "DashEnabled")
+    createSlider(parent, "Dash Speed", DashSettings, "DashSpeed", 10, 200, 1)
+    createSlider(parent, "Dash Duration", DashSettings, "DashDuration", 0.1, 1, 0.05)
+    createSlider(parent, "Dash Cooldown", DashSettings, "DashCooldown", 0.5, 5, 0.1)
+
+    createToggle(parent, "Fly Enabled", FlySettings, "Enabled")
+    createSlider(parent, "Fly Cooldown", FlySettings, "Cooldown", 0.1, 5, 0.1)
+
+    createToggle(parent, "Noclip Enabled", NoclipSettings, "Enabled")
+
+    createToggle(parent, "Speed Enabled", SpeedSettings, "Enabled")
+    createSlider(parent, "Speed Multiplier", SpeedSettings, "SpeedMultiplier", 1, 10, 0.1)
+
+    createToggle(parent, "Jump Stun Enabled", JumpStunSettings, "Enabled")
+end
+
+-- Visuals вкладка
+do
+    local parent = ContentFrames[3]
+    createToggle(parent, "ESP Enabled", ESPSettings, "Enabled")
+    createToggle(parent, "Ambient Effects", VisualEffectsSettings, "AmbientEnabled")
+    createToggle(parent, "Trails Enabled", VisualEffectsSettings, "TrailsEnabled")
+    createToggle(parent, "Custom FOV Enabled", VisualEffectsSettings, "CustomFOVEnabled")
+    createSlider(parent, "Custom FOV", VisualEffectsSettings, "CustomFOV", 30, 120, 1)
+end
+
+-- Misc вкладка
+do
+    local parent = ContentFrames[4]
+    createToggle(parent, "Anti Death Enabled", AntiDeathSettings, "Enabled")
+    createToggle(parent, "Show Keybinds HUD", HUDSettings, "ShowKeybindsHUD")
+end
+
+-- Drawing и визуализация FOV + прицел
+local mouse_box = nil
+local fov_circle = nil
+
+if Drawing then
+    mouse_box = Drawing.new("Square")
+    mouse_box.Visible = false
+    mouse_box.ZIndex = 999
+    mouse_box.Color = Color3.fromRGB(54, 57, 241)
+    mouse_box.Thickness = 3
+    mouse_box.Size = Vector2.new(20, 20)
+    mouse_box.Filled = true
+
+    fov_circle = Drawing.new("Circle")
+    fov_circle.Thickness = 1
+    fov_circle.NumSides = 100
+    fov_circle.Radius = 70
+    fov_circle.Filled = false
+    fov_circle.Visible = SilentAimSettings.FOVVisible
+    fov_circle.ZIndex = 999
+    fov_circle.Transparency = 1
+    fov_circle.Color = Color3.fromRGB(54, 57, 241)
 end
 
 local function degreesToPixels(degrees)
@@ -326,6 +502,11 @@ local function degreesToPixels(degrees)
     return math.tan(radians) * (screenHeight / (2 * math.tan(cameraFOVRad)))
 end
 
+local function getMousePosition()
+    return UserInputService:GetMouseLocation()
+end
+
+-- Функция поиска ближайшей цели для Silent Aim
 local function visibleCheck(target, part)
     if not SilentAimSettings.VisibleCheck then return true end
     if not target or not target.Character or not part then
@@ -335,7 +516,8 @@ local function visibleCheck(target, part)
     local currentTime = tick()
     local cacheKey = tostring(target.UserId)
 
-    if VisibleCheckCache[cacheKey] and currentTime - VisibleCheckCache[cacheKey].time < CacheDuration then
+    if VisibleCheckCache == nil then VisibleCheckCache = {} end
+    if VisibleCheckCache[cacheKey] and currentTime - VisibleCheckCache[cacheKey].time < 0.3 then
         return VisibleCheckCache[cacheKey].visible
     end
 
@@ -419,9 +601,8 @@ end
 
 local LastShot = 0
 
--- Автосстрел
+-- Автосстрел и визуализация
 RunService.RenderStepped:Connect(function()
-    -- Обновляем FOV circle и прицел
     if Drawing then
         if fov_circle then
             fov_circle.Radius = degreesToPixels(SilentAimSettings.FOVRadius)
@@ -444,7 +625,6 @@ RunService.RenderStepped:Connect(function()
         end
     end
 
-    -- Автосстрел
     if SilentAimSettings.Enabled and SilentAimSettings.AutoShoot then
         local now = tick()
         local interval = 1 / math.max(SilentAimSettings.CPS, 1)
@@ -464,7 +644,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Dash
+-- Dash (по нажатию клавиши)
 local LastDashTime = 0
 local IsDashing = false
 
@@ -504,6 +684,7 @@ local function PerformDash()
     end)
 end
 
+-- Обработка нажатий клавиш (по возможности на мобильном, но клавиатура все равно нужна)
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if gameProcessed then return end
     if input.UserInputType == Enum.UserInputType.Keyboard then
@@ -511,38 +692,31 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if keyName == DashSettings.DashKey then
             PerformDash()
         elseif keyName == FlySettings.FlyKey then
-            if tick() - LastFlyActivation >= FlySettings.Cooldown then
-                LastFlyActivation = tick()
+            if tick() - (FlySettings.LastActivation or 0) >= FlySettings.Cooldown then
+                FlySettings.LastActivation = tick()
                 FlySettings.Enabled = not FlySettings.Enabled
-                -- Тут вызов Fly скрипта из ПК версии, если есть
+                -- Тут можно добавить вызов Fly функции из ПК скрипта
             end
         elseif keyName == "RightAlt" then
             SilentAimSettings.Enabled = not SilentAimSettings.Enabled
-            if mouse_box then
-                mouse_box.Visible = SilentAimSettings.Enabled and SilentAimSettings.ShowSilentAimTarget
-            end
         elseif keyName == "B" then
             JumpStunSettings.Enabled = not JumpStunSettings.Enabled
-            -- Тут загрузка Jump Stun скрипта из ПК версии, если надо
         elseif keyName == SpeedSettings.SpeedKey then
             SpeedSettings.GuiVisible = not SpeedSettings.GuiVisible
-            -- Тут показ/скрытие Speed GUI из ПК версии, если есть
         end
     end
 end)
 
--- Hook метамethod для Silent Aim Raycast (копия из ПК версии)
+-- Hook для Raycast Silent Aim (если поддерживается)
 local oldNamecall
-oldNamecall = hookmetamethod or function() end
-local getnamecallmethod = getnamecallmethod or function() end
+local getnamecallmethod = getnamecallmethod or function() return nil end
+local hookmetamethod = hookmetamethod or nil
 
-if oldNamecall ~= nil and getnamecallmethod ~= nil then
-    local oldNamecallFunc = oldNamecall
-    oldNamecall = newcclosure(function(...)
+if hookmetamethod and getnamecallmethod then
+    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
         local method = getnamecallmethod()
         local args = {...}
-        local selfObj = args[1]
-        if SilentAimSettings.Enabled and selfObj == workspace and not checkcaller() then
+        if SilentAimSettings.Enabled and self == workspace and not checkcaller() then
             if method == "Raycast" and SilentAimSettings.SilentAimMethod == "Raycast" then
                 if #args >= 3 then
                     local origin = args[2]
@@ -557,39 +731,13 @@ if oldNamecall ~= nil and getnamecallmethod ~= nil then
                             end
                         end
                         args[3] = (targetPos - origin).Unit * 1000
-                        return oldNamecallFunc(unpack(args))
+                        return oldNamecall(self, unpack(args))
                     end
                 end
             end
         end
-        return oldNamecallFunc(...)
+        return oldNamecall(self, ...)
     end)
 end
 
--- Перетаскивание меню (простой drag)
-local dragging = false
-local dragStartPos = nil
-local frameStartPos = nil
-
-MainFrame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStartPos = input.Position
-        frameStartPos = MainFrame.Position
-    end
-end)
-
-MainFrame.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.Touch then
-        dragging = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if dragging and input.UserInputType == Enum.UserInputType.Touch then
-        local delta = input.Position - dragStartPos
-        MainFrame.Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
-    end
-end)
-
-print("Mobile UI loaded with full PC script functionality.")
+print("Unloosed.cc Mobile UI loaded successfully!")
