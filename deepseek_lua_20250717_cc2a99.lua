@@ -70,7 +70,7 @@ local Settings = {
         AntiAFK = false,
         AntiDeath = false,
         JumpStun = false,
-        Notifications = true
+        Notifications = false
     }
 }
 
