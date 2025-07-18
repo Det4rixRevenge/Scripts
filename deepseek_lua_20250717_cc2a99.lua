@@ -1,4 +1,4 @@
--- UNLOOSED.CC MOBILE
+-- UNLOOSED.CC MOBILE - ВСЕ ФУНКЦИИ ОТКЛЮЧЕНЫ ПО УМОЛЧАНИЮ
 
 repeat task.wait() until game:IsLoaded()
 
@@ -26,6 +26,7 @@ local Theme = {
     Danger = Color3.fromRGB(255, 60, 60)
 }
 
+-- НАСТРОЙКИ С ВЫКЛЮЧЕННЫМИ ФУНКЦИЯМИ ПО УМОЛЧАНИЮ
 local Settings = {
     Aim = {
         SilentAim = false,
@@ -37,11 +38,11 @@ local Settings = {
         FOV = 70,
         WallCheck = false,
         TargetPart = "Head",
-        ShowFOV = true,
+        ShowFOV = false, -- Выключено
         FOVColor = Color3.fromRGB(54, 57, 241),
-        Prediction = true,
+        Prediction = false, -- Выключено
         PredictionAmount = 0.165,
-        ShowTarget = true
+        ShowTarget = false -- Выключено
     },
     Movement = {
         Speed = false,
@@ -62,7 +63,7 @@ local Settings = {
         Trails = false,
         CustomFOV = false,
         FOVValue = 70,
-        Crosshair = true,
+        Crosshair = false, -- Выключено
         CrosshairColor = Color3.fromRGB(0, 170, 255)
     },
     Misc = {
@@ -1003,6 +1004,6 @@ game:BindToClose(function()
     end)
 end)
 
-FOVCircle.Radius = degreesToPixels(Settings.Aim.FOV)
-ToggleAntiAFK()
+FOVCircle.Visible = Settings.Aim.ShowFOV
+TargetIndicator.Visible = Settings.Aim.ShowTarget
 ToggleCrosshair(Settings.Visuals.Crosshair)
