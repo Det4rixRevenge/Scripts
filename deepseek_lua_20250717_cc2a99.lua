@@ -1,4 +1,4 @@
--- UNLOOSED.CC MOBILE - ПОЛНАЯ ВЕРСИЯ
+-- UNLOOSED.CC MOBILE - ПОЛНАЯ ВЕРСИЯ С ИСПРАВЛЕНИЯМИ
 
 -- Ожидание загрузки игры
 repeat task.wait() until game:IsLoaded()
@@ -35,6 +35,9 @@ local Theme = {
 local Settings = {
     Aim = {
         SilentAim = false,
+        ClassicAim = false,
+        ClassicAimKey = "Q",
+        ClassicAimSmoothness = 0.5,
         AutoShoot = false,
         HitChance = 100,
         FOV = 70,
@@ -86,6 +89,9 @@ local FOVConnection = nil
 local SnowPart = nil
 local Minimized = false
 local OriginalJumpPower = 50
+local JumpStunConnection = nil
+local SpeedConnection = nil
+local ClassicAimActive = false
 
 -- Визуализация
 local FOVCircle = Drawing.new("Circle")
@@ -107,7 +113,7 @@ TargetIndicator.Filled = false
 
 -- Функции
 local function degreesToPixels(degrees)
-    return math.tan(math.rad(degrees / 2)) * (Camera.ViewportSize.Y / (2 * math.tan(math.rad(Camera.FieldOfView / 2))))
+    return math.tan(math.rad(degrees / 2)) * (Camera.ViewportSize.Y / (2 * math.tan(math.rad(Camera.FieldOfView / 2)))
 end
 
 local function visibleCheck(target, part)
@@ -135,8 +141,6 @@ local function visibleCheck(target, part)
 end
 
 local function getClosestPlayer()
-    if not Settings.Aim.SilentAim then return nil end
-    
     local closestTarget = nil
     local closestDistance = Settings.Aim.FOV
     local mousePos = UIS:GetMouseLocation()
@@ -171,6 +175,28 @@ local function getClosestPlayer()
     end
     
     return closestTarget
+end
+
+-- Классический аимбот
+local function ClassicAim()
+    if not Settings.Aim.ClassicAim or not ClassicAimActive then return end
+    
+    local target = getClosestPlayer()
+    if target and target.Part then
+        local camera = workspace.CurrentCamera
+        local targetPos = target.Part.Position
+        
+        if Settings.Aim.Prediction then
+            local humanoid = target.Player.Character:FindFirstChild("Humanoid")
+            if humanoid then
+                targetPos = targetPos + (humanoid.MoveDirection * Settings.Aim.PredictionAmount)
+            end
+        end
+        
+        local currentCF = camera.CFrame
+        local targetCF = CFrame.lookAt(camera.CFrame.Position, targetPos)
+        camera.CFrame = currentCF:Lerp(targetCF, Settings.Aim.ClassicAimSmoothness)
+    end
 end
 
 -- Хук для Raycast
@@ -384,16 +410,51 @@ local function PerformDash()
 end
 
 local function UpdateSpeed()
-    if not LP.Character then return end
-    
-    local humanoid = LP.Character:FindFirstChild("Humanoid")
-    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
-    if not humanoid or not rootPart then return end
-    
-    if Settings.Movement.Speed and humanoid.MoveDirection.Magnitude > 0 then
-        local direction = humanoid.MoveDirection.Unit
-        local newPos = rootPart.Position + (direction * (Settings.Movement.SpeedValue / 20))
-        humanoid:MoveTo(newPos)
+    if Settings.Movement.Speed then
+        if not SpeedConnection then
+            SpeedConnection = RunService.Heartbeat:Connect(function(delta)
+                if LP.Character then
+                    local humanoid = LP.Character:FindFirstChild("Humanoid")
+                    local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
+                    
+                    if humanoid and rootPart and humanoid.MoveDirection.Magnitude > 0 then
+                        local moveDir = humanoid.MoveDirection
+                        local velocity = moveDir * Settings.Movement.SpeedValue
+                        
+                        rootPart.Velocity = Vector3.new(velocity.X, rootPart.Velocity.Y, velocity.Z)
+                    end
+                end
+            end)
+        end
+    else
+        if SpeedConnection then
+            SpeedConnection:Disconnect()
+            SpeedConnection = nil
+        end
+    end
+end
+
+local function ToggleJumpStun()
+    if Settings.Misc.JumpStun then
+        if JumpStunConnection then
+            JumpStunConnection:Disconnect()
+            JumpStunConnection = nil
+        end
+        
+        JumpStunConnection = RunService.Heartbeat:Connect(function()
+            if LP.Character then
+                local humanoid = LP.Character:FindFirstChild("Humanoid")
+                if humanoid and humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Landed)
+                    humanoid:ChangeState(Enum.HumanoidStateType.Running)
+                end
+            end
+        end)
+    else
+        if JumpStunConnection then
+            JumpStunConnection:Disconnect()
+            JumpStunConnection = nil
+        end
     end
 end
 
@@ -410,12 +471,6 @@ end
 local function ToggleAntiDeath()
     if Settings.Misc.AntiDeath then
         loadstring(game:HttpGet("https://pastebin.com/raw/zesZdxrN"))()
-    end
-end
-
-local function ToggleJumpStun()
-    if Settings.Misc.JumpStun then
-        loadstring(game:HttpGet("https://pastebin.com/raw/hACHbZ1T"))()
     end
 end
 
@@ -717,6 +772,8 @@ for _, tabName in ipairs(Tabs) do
     -- Aim Tab
     if tabName == "Aim" then
         CreateToggle(content, "Silent Aim", "Aim", "SilentAim")
+        CreateToggle(content, "Classic Aim", "Aim", "ClassicAim")
+        CreateSlider(content, "Aim Smoothness", "Aim", "ClassicAimSmoothness", 0.1, 1)
         CreateToggle(content, "Auto Shoot", "Aim", "AutoShoot")
         CreateSlider(content, "Hit Chance", "Aim", "HitChance", 0, 100)
         CreateSlider(content, "FOV", "Aim", "FOV", 10, 500, function(value)
@@ -816,6 +873,42 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
+-- Мобильные контролы
+local function CreateMobileControls()
+    local controls = Instance.new("ScreenGui")
+    controls.Name = "MobileControls"
+    controls.Parent = CG
+    
+    -- Кнопка для классического аимбота
+    local aimButton = Instance.new("TextButton")
+    aimButton.Size = UDim2.new(0, 100, 0, 50)
+    aimButton.Position = UDim2.new(0, 20, 1, -80)
+    aimButton.Text = "AIM"
+    aimButton.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+    aimButton.Parent = controls
+    
+    aimButton.TouchTap:Connect(function()
+        ClassicAimActive = not ClassicAimActive
+        aimButton.BackgroundColor3 = ClassicAimActive and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(0, 120, 255)
+    end)
+    
+    -- Кнопка для Jump Stun
+    local jumpStunButton = Instance.new("TextButton")
+    jumpStunButton.Size = UDim2.new(0, 100, 0, 50)
+    jumpStunButton.Position = UDim2.new(1, -120, 1, -80)
+    jumpStunButton.Text = "JUMP STUN"
+    jumpStunButton.BackgroundColor3 = Settings.Misc.JumpStun and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(120, 0, 0)
+    jumpStunButton.Parent = controls
+    
+    jumpStunButton.TouchTap:Connect(function()
+        Settings.Misc.JumpStun = not Settings.Misc.JumpStun
+        jumpStunButton.BackgroundColor3 = Settings.Misc.JumpStun and Color3.fromRGB(200, 0, 0) or Color3.fromRGB(120, 0, 0)
+        ToggleJumpStun()
+    end)
+end
+
+CreateMobileControls()
+
 -- Основной цикл
 RunService.RenderStepped:Connect(function()
     -- Обновление визуализации
@@ -839,6 +932,9 @@ RunService.RenderStepped:Connect(function()
             end
         end
     end
+    
+    -- Classic Aim
+    ClassicAim()
     
     -- Speed
     if Settings.Movement.Speed then
@@ -878,6 +974,10 @@ LP.CharacterAdded:Connect(function(character)
     if Settings.Movement.Speed then
         UpdateSpeed()
     end
+    
+    if Settings.Misc.JumpStun then
+        ToggleJumpStun()
+    end
 end)
 
 -- Очистка при закрытии
@@ -890,8 +990,8 @@ game:BindToClose(function()
         if NoclipConnection then NoclipConnection:Disconnect() end
         if TrailInstance then TrailInstance:Destroy() end
         if FOVConnection then FOVConnection:Disconnect() end
+        if JumpStunConnection then JumpStunConnection:Disconnect() end
+        if SpeedConnection then SpeedConnection:Disconnect() end
         Lighting:ClearAllChildren()
     end)
 end)
-
--- Уведомление о загрузке
