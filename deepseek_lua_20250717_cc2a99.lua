@@ -1,9 +1,7 @@
--- UNLOOSED.CC MOBILE - ПОЛНАЯ ВЕРСИЯ С ИСПРАВЛЕНИЯМИ
+-- UNLOOSED.CC MOBILE
 
--- Ожидание загрузки игры
 repeat task.wait() until game:IsLoaded()
 
--- Сервисы
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UIS = game:GetService("UserInputService")
@@ -12,15 +10,12 @@ local CG = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
 local Lighting = game:GetService("Lighting")
 
--- Ожидание LocalPlayer
 local LP = Players.LocalPlayer
 repeat task.wait() until LP
 
--- Проверка на мобильное устройство
 local IsMobile = UIS.TouchEnabled and not UIS.KeyboardEnabled and not UIS.MouseEnabled
 if not IsMobile then return end
 
--- Цветовая схема
 local Theme = {
     Background = Color3.fromRGB(28, 28, 36),
     Header = Color3.fromRGB(20, 20, 28),
@@ -31,7 +26,6 @@ local Theme = {
     Danger = Color3.fromRGB(255, 60, 60)
 }
 
--- Настройки
 local Settings = {
     Aim = {
         SilentAim = false,
@@ -67,7 +61,9 @@ local Settings = {
         Ambient = false,
         Trails = false,
         CustomFOV = false,
-        FOVValue = 70
+        FOVValue = 70,
+        Crosshair = true,
+        CrosshairColor = Color3.fromRGB(0, 170, 255)
     },
     Misc = {
         AntiAFK = false,
@@ -77,7 +73,6 @@ local Settings = {
     }
 }
 
--- Переменные
 local LastDashTime = 0
 local IsDashing = false
 local LastShotTime = 0
@@ -92,8 +87,8 @@ local OriginalJumpPower = 50
 local JumpStunConnection = nil
 local SpeedConnection = nil
 local AimbotInstance = nil
+local CrosshairElements = {}
 
--- Визуализация
 local FOVCircle = Drawing.new("Circle")
 FOVCircle.Visible = Settings.Aim.ShowFOV
 FOVCircle.Transparency = 1
@@ -111,7 +106,6 @@ TargetIndicator.NumSides = 100
 TargetIndicator.Radius = 15
 TargetIndicator.Filled = false
 
--- Функции
 local function degreesToPixels(degrees)
     return math.tan(math.rad(degrees / 2)) * (Camera.ViewportSize.Y / (2 * math.tan(math.rad(Camera.FieldOfView / 2))))
 end
@@ -177,7 +171,106 @@ local function getClosestPlayer()
     return closestTarget
 end
 
--- Функции для функций
+local function ToggleCrosshair(enable)
+    if enable then
+        if #CrosshairElements == 0 then
+            local lines = {
+                Drawing.new("Line"),
+                Drawing.new("Line"),
+                Drawing.new("Line"),
+                Drawing.new("Line")
+            }
+            
+            local text = Drawing.new("Text")
+            text.Text = "UnLoosed.cc"
+            text.Size = 16
+            text.Center = true
+            text.Outline = true
+            text.OutlineColor = Color3.new(0, 0, 0)
+            
+            for i, line in ipairs(lines) do
+                line.Visible = true
+                line.Transparency = 1
+                line.Color = Settings.Visuals.CrosshairColor
+                line.Thickness = 1.5
+                table.insert(CrosshairElements, line)
+            end
+            
+            text.Visible = true
+            text.Color = Theme.Text
+            table.insert(CrosshairElements, text)
+        else
+            for _, element in pairs(CrosshairElements) do
+                element.Visible = true
+            end
+        end
+    else
+        if #CrosshairElements > 0 then
+            for _, element in pairs(CrosshairElements) do
+                element.Visible = false
+            end
+        end
+    end
+end
+
+local rotationAngle = 0
+local lastMousePos = Vector2.new(0, 0)
+local lineLength = 15
+local centerGap = 5
+
+local function UpdateCrosshair()
+    if not Settings.Visuals.Crosshair or #CrosshairElements < 5 then return end
+    
+    local mousePos = UIS:GetMouseLocation()
+    lastMousePos = lastMousePos:Lerp(mousePos, 0.5)
+    
+    rotationAngle = (rotationAngle + 1.5) % 360
+    local rad = math.rad(rotationAngle)
+    local cosAngle = math.cos(rad)
+    local sinAngle = math.sin(rad)
+    
+    CrosshairElements[1].From = Vector2.new(
+        lastMousePos.X + cosAngle * centerGap,
+        lastMousePos.Y + sinAngle * centerGap
+    )
+    CrosshairElements[1].To = Vector2.new(
+        lastMousePos.X + cosAngle * (centerGap + lineLength),
+        lastMousePos.Y + sinAngle * (centerGap + lineLength)
+    )
+    
+    CrosshairElements[2].From = Vector2.new(
+        lastMousePos.X + -sinAngle * centerGap,
+        lastMousePos.Y + cosAngle * centerGap
+    )
+    CrosshairElements[2].To = Vector2.new(
+        lastMousePos.X + -sinAngle * (centerGap + lineLength),
+        lastMousePos.Y + cosAngle * (centerGap + lineLength)
+    )
+    
+    CrosshairElements[3].From = Vector2.new(
+        lastMousePos.X + -cosAngle * centerGap,
+        lastMousePos.Y + -sinAngle * centerGap
+    )
+    CrosshairElements[3].To = Vector2.new(
+        lastMousePos.X + -cosAngle * (centerGap + lineLength),
+        lastMousePos.Y + -sinAngle * (centerGap + lineLength)
+    )
+    
+    CrosshairElements[4].From = Vector2.new(
+        lastMousePos.X + sinAngle * centerGap,
+        lastMousePos.Y + -cosAngle * centerGap
+    )
+    CrosshairElements[4].To = Vector2.new(
+        lastMousePos.X + sinAngle * (centerGap + lineLength),
+        lastMousePos.Y + -cosAngle * (centerGap + lineLength)
+    )
+    
+    CrosshairElements[5].Position = Vector2.new(
+        lastMousePos.X,
+        lastMousePos.Y + centerGap + lineLength + 10
+    )
+end
+
 local function ToggleFly()
     if Settings.Movement.Fly then
         FlyInstance = loadstring(game:HttpGet("https://pastebin.com/raw/5HvNBUec"))()
@@ -425,7 +518,6 @@ local function ToggleAntiDeath()
     end
 end
 
--- НОВЫЙ КЛАССИЧЕСКИЙ AIMBOT
 local function ToggleClassicAim()
     if Settings.Aim.ClassicAim then
         if not AimbotInstance then
@@ -441,7 +533,6 @@ local function ToggleClassicAim()
     end
 end
 
--- Создание интерфейса
 local MobileUI = Instance.new("ScreenGui")
 MobileUI.Name = "UnLoosed.cc"
 MobileUI.ResetOnSpawn = false
@@ -467,7 +558,6 @@ UIStroke.Color = Theme.Primary
 UIStroke.Thickness = 1
 UIStroke.Parent = MainFrame
 
--- Header
 local HeaderFrame = Instance.new("Frame")
 HeaderFrame.Size = UDim2.new(1, 0, 0, 30)
 HeaderFrame.BackgroundColor3 = Theme.Header
@@ -509,7 +599,6 @@ MinimizeButton.Size = UDim2.new(0, 30, 0, 30)
 MinimizeButton.Position = UDim2.new(0.85, 0, 0, 0)
 MinimizeButton.Parent = HeaderFrame
 
--- Tabs
 local Tabs = {"Aim", "Movement", "Visuals", "Misc"}
 local CurrentTab = "Aim"
 
@@ -538,7 +627,6 @@ ContentFrame.Position = UDim2.new(0, 0, 0, 35)
 ContentFrame.BackgroundTransparency = 1
 ContentFrame.Parent = TabContainer
 
--- Функции интерфейса
 local function CreateTabButton(name)
     local button = Instance.new("TextButton")
     button.Text = name
@@ -731,15 +819,13 @@ local function CreateSlider(parent, name, tab, setting, min, max, callback)
     end)
 end
 
--- Создание вкладок
 for _, tabName in ipairs(Tabs) do
     CreateTabButton(tabName)
     local content = CreateTabContent(tabName)
     
-    -- Aim Tab
     if tabName == "Aim" then
         CreateToggle(content, "Silent Aim", "Aim", "SilentAim")
-        CreateToggle(content, "Classic Aim", "Aim", "ClassicAim", ToggleClassicAim) -- Изменено для использования нового аима
+        CreateToggle(content, "Classic Aim", "Aim", "ClassicAim", ToggleClassicAim)
         CreateSlider(content, "Aim Smoothness", "Aim", "ClassicAimSmoothness", 0.1, 1)
         CreateToggle(content, "Auto Shoot", "Aim", "AutoShoot")
         CreateSlider(content, "Hit Chance", "Aim", "HitChance", 0, 100)
@@ -755,10 +841,7 @@ for _, tabName in ipairs(Tabs) do
         end)
         CreateToggle(content, "Prediction", "Aim", "Prediction")
         CreateSlider(content, "Prediction Amount", "Aim", "PredictionAmount", 0.1, 0.5)
-    end
-    
-    -- Movement Tab
-    if tabName == "Movement" then
+    elseif tabName == "Movement" then
         CreateToggle(content, "Speed Hack", "Movement", "Speed", UpdateSpeed)
         CreateSlider(content, "Speed Value", "Movement", "SpeedValue", 16, 100, UpdateSpeed)
         CreateToggle(content, "High Jump", "Movement", "HighJump", ToggleHighJump)
@@ -776,24 +859,19 @@ for _, tabName in ipairs(Tabs) do
         CreateSlider(content, "Dash Speed", "Movement", "DashSpeed", 10, 100)
         CreateSlider(content, "Dash Duration", "Movement", "DashDuration", 0.1, 1.0)
         CreateSlider(content, "Dash Cooldown", "Movement", "DashCooldown", 0.5, 5.0)
-    end
-    
-    -- Visuals Tab
-    if tabName == "Visuals" then
+    elseif tabName == "Visuals" then
         CreateToggle(content, "Player ESP", "Visuals", "ESP", ToggleESP)
         CreateToggle(content, "Tracers", "Visuals", "Tracers")
         CreateToggle(content, "Ambient Effects", "Visuals", "Ambient", ToggleAmbient)
         CreateToggle(content, "Purple Trails", "Visuals", "Trails", ToggleTrails)
         CreateToggle(content, "Custom FOV", "Visuals", "CustomFOV", ToggleCustomFOV)
+        CreateToggle(content, "Crosshair", "Visuals", "Crosshair", ToggleCrosshair)
         CreateSlider(content, "FOV Value", "Visuals", "FOVValue", 30, 120, function(value)
             if Settings.Visuals.CustomFOV then
                 Camera.FieldOfView = value
             end
         end)
-    end
-    
-    -- Misc Tab
-    if tabName == "Misc" then
+    elseif tabName == "Misc" then
         CreateToggle(content, "Anti-AFK", "Misc", "AntiAFK", ToggleAntiAFK)
         CreateToggle(content, "Anti-Death", "Misc", "AntiDeath", ToggleAntiDeath)
         CreateToggle(content, "Jump Stun", "Misc", "JumpStun", ToggleJumpStun)
@@ -801,7 +879,6 @@ for _, tabName in ipairs(Tabs) do
     end
 end
 
--- Обработчики интерфейса
 CloseButton.MouseButton1Click:Connect(function()
     MobileUI:Destroy()
 end)
@@ -815,7 +892,6 @@ MinimizeButton.MouseButton1Click:Connect(function()
     end
 end)
 
--- Перемещение интерфейса
 local dragging = false
 local dragStart, startPos
 
@@ -840,10 +916,14 @@ UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- Основной цикл
+local lastTime = tick()
 RunService.RenderStepped:Connect(function()
-    -- Обновление визуализации
-    FOVCircle.Position = UIS:GetMouseLocation()
+    local currentTime = tick()
+    local deltaTime = currentTime - lastTime
+    lastTime = currentTime
+    
+    local mousePos = UIS:GetMouseLocation()
+    FOVCircle.Position = mousePos
     
     local target = getClosestPlayer()
     TargetIndicator.Visible = Settings.Aim.ShowTarget and Settings.Aim.SilentAim and target ~= nil
@@ -852,10 +932,8 @@ RunService.RenderStepped:Connect(function()
         TargetIndicator.Position = target.ScreenPosition
     end
     
-    -- Auto Shoot
     if Settings.Aim.SilentAim and Settings.Aim.AutoShoot then
-        local currentTime = tick()
-        if currentTime - LastShotTime >= (1 / 10) then -- 10 CPS
+        if currentTime - LastShotTime >= (1 / 10) then
             if target and math.random(1, 100) <= Settings.Aim.HitChance then
                 mouse1press()
                 mouse1release()
@@ -864,17 +942,16 @@ RunService.RenderStepped:Connect(function()
         end
     end
     
-    -- Speed
+    UpdateCrosshair()
+    
     if Settings.Movement.Speed then
         UpdateSpeed()
     end
     
-    -- Dash
     if Settings.Movement.Dash then
         PerformDash()
     end
     
-    -- Обновление позиции снега
     if Settings.Visuals.Ambient and SnowPart and LP.Character then
         local rootPart = LP.Character:FindFirstChild("HumanoidRootPart")
         if rootPart then
@@ -883,7 +960,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Обработчик добавления персонажа
 LP.CharacterAdded:Connect(function(character)
     if Settings.Movement.HighJump then
         local humanoid = character:WaitForChild("Humanoid")
@@ -908,7 +984,6 @@ LP.CharacterAdded:Connect(function(character)
     end
 end)
 
--- Очистка при закрытии
 game:BindToClose(function()
     pcall(function()
         FOVCircle:Remove()
@@ -921,10 +996,13 @@ game:BindToClose(function()
         if JumpStunConnection then JumpStunConnection:Disconnect() end
         if SpeedConnection then SpeedConnection:Disconnect() end
         if AimbotInstance then AimbotInstance:Destroy() end
+        for _, element in pairs(CrosshairElements) do
+            element:Remove()
+        end
         Lighting:ClearAllChildren()
     end)
 end)
 
--- Инициализация
 FOVCircle.Radius = degreesToPixels(Settings.Aim.FOV)
 ToggleAntiAFK()
+ToggleCrosshair(Settings.Visuals.Crosshair)
