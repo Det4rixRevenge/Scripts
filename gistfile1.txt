@@ -3272,6 +3272,14 @@ addCommand("skybox", function(_, input)
             Lf  = "rbxassetid://252760078",
             Rt  = "rbxassetid://252760078",
             Up  = "rbxassetid://252760078",
+        },
+        ["k00lkidd"] = {
+            Bak = "rbxassetid://133973334152130",
+            Dn  = "rbxassetid://133973334152130",
+            Ft  = "rbxassetid://133973334152130",
+            Lf  = "rbxassetid://133973334152130",
+            Rt  = "rbxassetid://133973334152130",
+            Up  = "rbxassetid://133973334152130",
         }
     }
 
