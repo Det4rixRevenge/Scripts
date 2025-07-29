@@ -274,7 +274,7 @@ template.BorderColor3 = Color3.fromRGB(0, 0, 0)
 template.BorderSizePixel = 0
 template.Size = UDim2.new(0.999999881, 0, 0.0893486291, 0)
 template.Font = Enum.Font.SourceSans
-template.Text = "error, please contact cynatica."
+template.Text = "error, please contact k00lkidd."
 template.TextColor3 = Color3.fromRGB(200, 200, 200)
 template.TextScaled = true
 template.TextSize = 14.000
@@ -915,7 +915,7 @@ if not game:IsLoaded() then game.Loaded:Wait() end
 --Discord Invite 
 local notificationShown = false
 local TweenService = game:GetService("TweenService")
-local discordInvite = "https://discord.gg/quirkycmd"
+local discordInvite = "https://discord.gg/w2rK22b4"
 
 local function createNotification()
 	local gui = game.Players.LocalPlayer:WaitForChild("PlayerGui")
@@ -970,7 +970,7 @@ local function createNotification()
 	layout.Padding = UDim.new(0, 6)
 
 	local label = Instance.new("TextLabel")
-	label.Text = "QuirkyCMD Discord Server"
+	label.Text = "k00lkidsCMD Discord Server"
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 14
@@ -1078,7 +1078,7 @@ local isTesting = game.PlaceId == 16245218863
 local modernChat = game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.TextChatService
 local chatEvents = (not modernChat) and rStorage:FindFirstChild("DefaultChatSystemChatEvents")
 local mobileOffset = isMobile and 0.1 or 0
-local prefix = ";"
+local prefix = "kool"
 local prefixEnum = Enum.KeyCode.Semicolon
 -- credits to itzyaboyluq on github for the word list
 local wordList = {"delete", "remove", "destroy", "clean", "clear","bullet", "bala", "shoot", "shot", "fire", "segway", "handless", "sword", "attack", "despawn", "deletar", "apagar"}
