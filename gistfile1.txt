@@ -3157,22 +3157,85 @@ addCommand("explode", function(plrs, input)
     for _, plr in ipairs(plrs) do
         local char = plr.Character
         if char and char:FindFirstChild("HumanoidRootPart") then
+            -- Создаём взрыв (видно всем)
             local explosion = Instance.new("Explosion")
             explosion.Position = char.HumanoidRootPart.Position
             explosion.BlastPressure = 0 -- Чтобы не отбрасывало
             explosion.BlastRadius = 10
             explosion.Parent = workspace
-            
-            -- Убиваем игрока (если есть доступ)
+
+            -- Убиваем игрока (через функцию kill)
             if plr ~= game.Players.LocalPlayer then
-                local hum = char:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.Health = 0
+                local humanoid = char:FindFirstChildOfClass("Humanoid")
+                if humanoid then
+                    if humanoid.RigType == Enum.HumanoidRigType.R6 then
+                        local neck = char:FindFirstChild("Head") and char.Head:FindFirstChild("Neck")
+                        if neck then
+                            neck:Destroy() -- R6 die
+                        end
+                    else
+                        humanoid:Destroy() -- R15 die
+                    end
                 end
             end
         end
     end
 end, {"boom"}, 2)
+
+local loopExplodeConnections = {}
+
+addCommand("loopexplode", function(plrs, input)
+    local target = input:lower():match("(%a+)") or "me" -- all/me/ник
+    local delay = tonumber(input:match("%d+%.?%d*")) or 1 -- Задержка в секундах
+    
+    -- Останавливаем старый цикл, если есть
+    if loopExplodeConnections[target] then
+        loopExplodeConnections[target]:Disconnect()
+    end
+
+    -- Если цель = "all", взрываем всех
+    if target == "all" then
+        plrs = game:GetService("Players"):GetPlayers()
+    elseif target == "me" then
+        plrs = {game:GetService("Players").LocalPlayer}
+    end
+
+    -- Запускаем цикл
+    loopExplodeConnections[target] = game:GetService("RunService").Heartbeat:Connect(function()
+        for _, plr in ipairs(plrs) do
+            local char = plr.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                -- Создаём взрыв
+                local explosion = Instance.new("Explosion")
+                explosion.Position = char.HumanoidRootPart.Position
+                explosion.BlastPressure = 0
+                explosion.BlastRadius = 10
+                explosion.Parent = workspace
+
+                -- Убиваем игрока (кроме себя)
+                if plr ~= game.Players.LocalPlayer then
+                    local humanoid = char:FindFirstChildOfClass("Humanoid")
+                    if humanoid then
+                        humanoid:Destroy()
+                    end
+                end
+            end
+        end
+        task.wait(delay) -- Задержка между взрывами
+    end)
+end, {"lexplode"}, 2)
+
+addCommand("unloopexplode", function(_, input)
+    local target = input:lower() or "all"
+    
+    if loopExplodeConnections[target] then
+        loopExplodeConnections[target]:Disconnect()
+        loopExplodeConnections[target] = nil
+        notify("Stopped", "Loop explode for " .. target .. " stopped.", 3)
+    else
+        notify("Error", "No active loop for " .. target, 3)
+    end
+end, {"unlexplode"}, 2)
 
 addCommand("skybox", function(_, input)
     local skyType = input:lower() or "space"
