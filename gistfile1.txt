@@ -3106,6 +3106,159 @@ addCommand("blocktools", function(plrs)
 	end
 end, {"demeshtools"}, 1)
 
+addCommand("particle", function(plrs, input)
+    local effectType = input:lower():match("(%a+)%s") or "fire" -- fire/smoke/sparkles
+    local target = input:lower():match("%a+%s(%a+)") or "me" -- all/me/ник
+    
+    local effects = {
+        ["fire"] = "rbxassetid://242880374", -- Огонь
+        ["smoke"] = "rbxassetid://184882868", -- Дым
+        ["sparkles"] = "rbxassetid://31246117", -- Блёстки
+        ["magic"] = "rbxassetid://6034407228", -- Магия
+    }
+
+    -- Если цель = "all", применяем ко всем игрокам
+    if target == "all" then
+        plrs = game:GetService("Players"):GetPlayers()
+    elseif target == "me" then
+        plrs = {game:GetService("Players").LocalPlayer}
+    end
+
+    for _, plr in ipairs(plrs) do
+        local char = plr.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            -- Удаляем старые партиклы
+            for _, v in ipairs(char.HumanoidRootPart:GetChildren()) do
+                if v:IsA("ParticleEmitter") then
+                    v:Destroy()
+                end
+            end
+
+            -- Создаём новый эффект
+            local emitter = Instance.new("ParticleEmitter")
+            emitter.Texture = effects[effectType] or effects["fire"]
+            emitter.LightEmission = 1
+            emitter.Size = NumberSequence.new(0.5)
+            emitter.Parent = char.HumanoidRootPart
+        end
+    end
+end, {"ptcl", "effect"}, 2)
+
+addCommand("explode", function(plrs, input)
+    local target = input:lower() or "me" -- all/me/ник
+    
+    -- Если цель = "all", взрываем всех
+    if target == "all" then
+        plrs = game:GetService("Players"):GetPlayers()
+    elseif target == "me" then
+        plrs = {game:GetService("Players").LocalPlayer}
+    end
+
+    for _, plr in ipairs(plrs) do
+        local char = plr.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local explosion = Instance.new("Explosion")
+            explosion.Position = char.HumanoidRootPart.Position
+            explosion.BlastPressure = 0 -- Чтобы не отбрасывало
+            explosion.BlastRadius = 10
+            explosion.Parent = workspace
+            
+            -- Убиваем игрока (если есть доступ)
+            if plr ~= game.Players.LocalPlayer then
+                local hum = char:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.Health = 0
+                end
+            end
+        end
+    end
+end, {"boom"}, 2)
+
+addCommand("skybox", function(_, input)
+    local skyType = input:lower() or "space"
+    
+    local skyIds = {
+        ["space"] = {
+            Bak = "rbxassetid://159454299",
+            Dn  = "rbxassetid://159454299",
+            Ft  = "rbxassetid://159454299",
+            Lf  = "rbxassetid://159454299",
+            Rt  = "rbxassetid://159454299",
+            Up  = "rbxassetid://159454299",
+        },
+        ["sunset"] = {
+            Bak = "rbxassetid://263908152",
+            Dn  = "rbxassetid://263908152",
+            Ft  = "rbxassetid://263908152",
+            Lf  = "rbxassetid://263908152",
+            Rt  = "rbxassetid://263908152",
+            Up  = "rbxassetid://263908152",
+        },
+        ["night"] = {
+            Bak = "rbxassetid://12064107",
+            Dn  = "rbxassetid://12064107",
+            Ft  = "rbxassetid://12064107",
+            Lf  = "rbxassetid://12064107",
+            Rt  = "rbxassetid://12064107",
+            Up  = "rbxassetid://12064107",
+        },
+        ["hell"] = {
+            Bak = "rbxassetid://252760078",
+            Dn  = "rbxassetid://252760078",
+            Ft  = "rbxassetid://252760078",
+            Lf  = "rbxassetid://252760078",
+            Rt  = "rbxassetid://252760078",
+            Up  = "rbxassetid://252760078",
+        }
+    }
+
+    local lighting = game:GetService("Lighting")
+    local sky = lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky", lighting)
+
+    for side, id in pairs(skyIds[skyType] or skyIds["space"]) do
+        sky["Skybox" .. side] = id
+    end
+end, {"sky"}, 2)
+
+addCommand("globalsky", function(_, input)
+    local skyTypes = {
+        ["space"] = "rbxassetid://159454299",
+        ["sunset"] = "rbxassetid://263908152",
+        ["night"] = "rbxassetid://12064107",
+        ["hell"] = "rbxassetid://252760078",
+    }
+    
+    -- Ищем RemoteEvent в ReplicatedStorage
+    local remote = game:GetService("ReplicatedStorage"):FindFirstChild("ChangeSky") 
+                 or game:GetService("ReplicatedStorage"):FindFirstChild("SkyboxRemote")
+    
+    if remote then
+        -- Отправляем запрос на сервер
+        remote:FireServer(skyTypes[input:lower()] or skyTypes["space"])
+        notify("Success", "Skybox changed for everyone!", 5)
+    else
+        -- Если RemoteEvent не найден, меняем только локально
+        local lighting = game:GetService("Lighting")
+        local sky = lighting:FindFirstChildOfClass("Sky") or Instance.new("Sky", lighting)
+        
+        for side in pairs({"Bk", "Dn", "Ft", "Lf", "Rt", "Up"}) do
+            sky["Skybox" .. side] = skyTypes[input:lower()] or skyTypes["space"]
+        end
+        
+        notify("Info", "Skybox changed locally (server doesn't support global).", 5)
+    end
+end, {"gsky"}, 3)
+
+addCommand("fireall", function(plrs)
+    for _, plr in ipairs(plrs) do
+        local char = plr.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local fire = Instance.new("Fire")
+            fire.Parent = char.HumanoidRootPart
+        end
+    end
+end, {"burn"}, 2)
+
 addCommand("bighats", function(plrs)
 	for i,v in pairs(plrs) do
 		local char = v.Character
