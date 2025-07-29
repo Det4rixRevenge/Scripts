@@ -4777,13 +4777,4 @@ if not inDatabase then
 
 end
 
--- Удаляем все ссылки
-for k,v in pairs(getgenv()) do
-    if type(v) == "function" and debug.getinfo(v).name:find("k00lkidd") then
-        getgenv()[k] = nil
-    end
-end
-
-collectgarbage() -- Чистим память
-
 debugPrint("QuirkyCMD loaded successfully!")
