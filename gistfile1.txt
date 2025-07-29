@@ -103,7 +103,7 @@ local UIGradient_5 = Instance.new("UIGradient")
 
 --Properties:
 
-quirkyCMD.Name = "k00lkiddCMD"
+quirkyCMD.Name = "quirkyCMD"
 quirkyCMD.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 quirkyCMD.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 quirkyCMD.ResetOnSpawn = false
