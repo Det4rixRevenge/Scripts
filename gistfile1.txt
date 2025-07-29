@@ -3202,6 +3202,34 @@ addCommand("ragdoll", function(plrs)
 	end
 end, {"nohrp"}, 1)
 
+addCommand("dance", function(plrs)
+    for _, plr in ipairs(plrs) do
+        local char = plr.Character
+        if not char then continue end
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if not hum then continue end
+        
+        -- Загружаем анимацию танца (ID можно заменить на другую)
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://35654637" -- ID анимации танца
+        
+        local track = hum:LoadAnimation(anim)
+        track:Play()
+        
+        -- Останавливаем анимацию через 10 секунд (опционально)
+        task.delay(10, function()
+            if track then track:Stop() end
+        end)
+    end
+    notify("Forced dance on targets!", 5)
+end, {}, 1)
+
+addCommand("gravity", function(_, input)
+    local value = tonumber(input) or 196.2 -- стандартное значение
+    workspace.Gravity = value
+    notify("Gravity set to " .. value, 5)
+end, {"grav"}, 2)
+
 addCommand("sink", function(plrs)
 	for i,v in pairs(plrs) do
 		local char = v.Character
