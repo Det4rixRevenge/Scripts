@@ -3202,6 +3202,63 @@ addCommand("ragdoll", function(plrs)
 	end
 end, {"nohrp"}, 1)
 
+addCommand("telekinesis", function()
+    local target = mouse.Target
+    if target then
+        local handle = Instance.new("Part")
+        handle.Anchored = true
+        handle.Transparency = 1
+        handle.Parent = workspace
+        local weld = Instance.new("WeldConstraint", handle)
+        weld.Part0 = handle
+        weld.Part1 = target
+
+        rs.Heartbeat:Connect(function()
+            handle.Position = mouse.Hit.Position
+        end)
+    end
+end, {"tk"}, 3)
+
+addCommand("blackhole", function(plrs)
+    local center = workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.LookVector * 10
+    local blackHole = Instance.new("Part")
+    blackHole.Position = center
+    blackHole.Anchored = true
+    blackHole.CanCollide = false
+    blackHole.Transparency = 1
+    blackHole.Size = Vector3.new(5, 5, 5)
+    blackHole.Parent = workspace
+
+    for _, plr in ipairs(players:GetPlayers()) do
+        local char = plr.Character
+        if char then
+            for _, part in ipairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    local bv = Instance.new("BodyVelocity")
+                    bv.Velocity = (center - part.Position).Unit * 50
+                    bv.Parent = part
+                    task.delay(3, function() delete(part) end)
+                end
+            end
+        end
+    end
+    task.delay(5, function() blackHole:Destroy() end)
+end, {"gravity"}, 2)
+
+addCommand("clonearmy", function(plrs, input)
+    local count = tonumber(input) or 5
+    for i = 1, count do
+        local clone = character:Clone()
+        clone.Parent = workspace
+        local hum = clone:FindFirstChildOfClass("Humanoid")
+        if hum then
+            rs.Heartbeat:Connect(function()
+                hum:MoveTo(character.HumanoidRootPart.Position)
+            end)
+        end
+    end
+end, {"clones"}, 3)
+
 addCommand("dance", function(plrs)
     for _, plr in ipairs(plrs) do
         local char = plr.Character
