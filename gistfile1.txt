@@ -164,7 +164,7 @@ cmdBox.BorderSizePixel = 0
 cmdBox.Size = UDim2.new(0.824000239, 0, 0.999999642, 0)
 cmdBox.Font = Enum.Font.SourceSansBold
 cmdBox.PlaceholderColor3 = Color3.fromRGB(147, 147, 147)
-cmdBox.PlaceholderText = "QuirkyCmd loaded"
+cmdBox.PlaceholderText = "k00lkiddCMD loaded"
 cmdBox.Text = ""
 cmdBox.TextColor3 = Color3.fromRGB(147, 147, 147)
 cmdBox.TextScaled = true
@@ -1293,7 +1293,7 @@ local hasBlurred = false
 local notificationDismissed = false
 
 local appearSoundId = "rbxassetid://88591874532589" -- you can change this to your desired sound with an id. cool right?
-local discordInvite = "https://discord.gg/quirkycmd"-- same goes for this link, but i'd prefer if you keep it as quirky ;)
+local discordInvite = "https://discord.gg/w2rK22b4"-- same goes for this link, but i'd prefer if you keep it as quirky ;)
 
 local function playAppearSound()
 	local sound = Instance.new("Sound")
@@ -1375,7 +1375,7 @@ local function showFirstTimeNotification()
 	layout.Padding = UDim.new(0, 6)
 
 	local label = Instance.new("TextLabel")
-	label.Text = "QuirkyCMD Discord Server"
+	label.Text = "k00lkiddCMD Discord Server"
 	label.TextColor3 = Color3.new(1, 1, 1)
 	label.Font = Enum.Font.GothamBold
 	label.TextSize = 14
@@ -1900,7 +1900,7 @@ addCommand("ranks", function()
 end, {"admins", "owners"}, 3)
 
 addCommand("aliases", function()
-	local printString = "\nQuirkyCMD command aliases:\n"
+	local printString = "\nk00lkiddCMD command aliases:\n"
 	for i,v in pairs(commands) do
 		local aliases = v.aliases
 		if #aliases == 0 then continue end
@@ -4480,7 +4480,7 @@ addCommand("reanim",function()
 end, {"reanimate"}, 3)
 
 --[[Add scrolling command list]]--
-local scrollText = "QuirkyCMD made by Cynatica | the best Admin abuse Utility! | "
+local scrollText = "k00lkiddCMD made by defensow | the best Admin abuse Utility! | "
 if not isMobile then
 	scrollText ..= "press ; to open/hide the Ui | "
 end
@@ -4626,7 +4626,7 @@ local cmdData = {
 	["walkspeed"] = "Sets your walk speed.",
 	["wither"] = "Slowly deletes limbs from players over time.",
 	["witherws"] = "Slowly deletes workspace parts over time.",
-	["close"] = "Safely shuts down QuirkyCMD by destroying the UI and disconnecting all events.",
+	["close"] = "Safely shuts down k00lkiddCMD by destroying the UI and disconnecting all events.",
 }
 
 --[[right scaling and creation of the command list with its description.]]--
@@ -4735,7 +4735,7 @@ if not inDatabase then
 	bindable.OnInvoke = promptCallback
 
 	sgui:SetCore("SendNotification", {
-		Title = "QuirkyCMD";
+		Title = "k00lkiddCMD";
 		Text = "would you like to log this game? (PLEASE TEST COMMANDS BEFORE CLICKING YES)",
 		Duration = 300,
 		Button1 = "Yes",
@@ -4747,4 +4747,4 @@ if not inDatabase then
 
 end
 
-debugPrint("QuirkyCMD loaded successfully!")
+debugPrint("k00lkiddCMD loaded successfully!")
