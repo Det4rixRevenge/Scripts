@@ -4,37 +4,6 @@
 
 -- QuirkyCMD on Top!
 
---=== АНТИЧИТ ЗАЩИТА ===--
-local function FakeLegitCalls()
-    -- Ложные вызовы RemoteEvents
-    for _, v in pairs(game:GetDescendants()) do
-        if v:IsA("RemoteEvent") and math.random(1, 3) == 1 then
-            pcall(v.FireServer, v, "Ping")
-        end
-    end
-end
-
-local function HideScript()
-    script.Name = "LegitScript_"..math.random(1000,9999)
-    delay(5, function() script:Destroy() end)
-end
-
-local function HookDetection()
-    local oldNamecall
-    oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
-        local method = getnamecallmethod()
-        if method == "FireServer" and tostring(self) == "AntiCheatRemote" then
-            return nil -- Блокируем вызовы античита
-        end
-        return oldNamecall(self, ...)
-    end)
-end
-
--- Запускаем защиту
-FakeLegitCalls()
-HideScript()
-HookDetection()
-
 
 local cloneref = cloneref or function(a) return a end
 local coreGui = cloneref(game:GetService("CoreGui"))
