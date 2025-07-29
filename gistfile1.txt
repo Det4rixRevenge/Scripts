@@ -1078,7 +1078,7 @@ local isTesting = game.PlaceId == 16245218863
 local modernChat = game:GetService("TextChatService").ChatVersion == Enum.ChatVersion.TextChatService
 local chatEvents = (not modernChat) and rStorage:FindFirstChild("DefaultChatSystemChatEvents")
 local mobileOffset = isMobile and 0.1 or 0
-local prefix = "kool"
+local prefix = "k"
 local prefixEnum = Enum.KeyCode.Semicolon
 -- credits to itzyaboyluq on github for the word list
 local wordList = {"delete", "remove", "destroy", "clean", "clear","bullet", "bala", "shoot", "shot", "fire", "segway", "handless", "sword", "attack", "despawn", "deletar", "apagar"}
