@@ -4,6 +4,14 @@
 
 -- QuirkyCMD on Top!
 
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    if method == "Kick" or method == "kick" then -- Блокируем кик
+        return nil
+    end
+    return oldNamecall(self, ...)
+end)
 
 local cloneref = cloneref or function(a) return a end
 local coreGui = cloneref(game:GetService("CoreGui"))
