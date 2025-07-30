@@ -1679,22 +1679,6 @@ if not genv.foundRemote then
 		scan(workspace, false)
 	end
 
--- Добавить после обнаружения genv.foundRemote
-local spawnRemote = nil
-for _, instance in pairs(game:GetDescendants()) do
-    if not instance:IsA("RemoteEvent") then continue end
-    if instance.Name:lower():find("spawn") or instance.Name:lower():find("create") then
-        spawnRemote = instance
-        break
-    end
-end
-
-if spawnRemote then
-    debugPrint("[+] Found spawn remote: " .. spawnRemote:GetFullName())
-else
-    debugPrint("[-] No spawn remote found")
-end
-
 	if not genv.foundRemote then
 		debugPrint("aggro all")
 		for i,v in pairs(services) do
@@ -1707,7 +1691,7 @@ if not genv.foundRemote then
 	remotePath.Text = "game isn't supported, closing..."
 	task.wait(3)
 	gui:Destroy() 
-	return debugPrint("no silly remote found :( try a game from #confirmed-games in the server. Invite: discord.gg/quirkycmd") 
+	return debugPrint("no silly remote found :( try a game from #confirmed-games in the server. Invite: https://discord.gg/w2rK22b4") 
 end
 
 if hasFiles() and getGameList()[tostring(game.PlaceId)] == nil then
