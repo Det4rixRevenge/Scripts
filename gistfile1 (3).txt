@@ -1674,6 +1674,16 @@ if not genv.foundRemote then
 	return debugPrint("no silly remote found :( try a game from #confirmed-games in the server. Invite: discord.gg/quirkycmd") 
 end
 
+local originalFireServer
+originalFireServer = hookfunction(RemoteEvent.FireServer, function(self, ...)
+    if self.Name == "DeleteEvent" then -- Пример: подмена удаления
+        local args = {...}
+        args[1] = workspace.JunkPart -- Вместо удаляемого объекта — мусорная часть
+        return originalFireServer(self, unpack(args))
+    end
+    return originalFireServer(self, ...)
+end)
+
 if hasFiles() and getGameList()[tostring(game.PlaceId)] == nil then
 	logGameLocally()
 end
