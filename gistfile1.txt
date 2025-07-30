@@ -3,7 +3,14 @@
 -- Made by Cynatica
 
 -- QuirkyCMD on Top!
-
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    if method == "Kick" or method == "kick" then -- Блокируем кик
+        return nil
+    end
+    return oldNamecall(self, ...)
+end)
 
 local cloneref = cloneref or function(a) return a end
 local coreGui = cloneref(game:GetService("CoreGui"))
@@ -1277,6 +1284,25 @@ local function lerp(a, b, m)
 	return a + (b - a) * m
 end
 
+local originalFireServer
+originalFireServer = hookfunction(RemoteEvent.FireServer, function(self, ...)
+    if self.Name == "DeleteEvent" then -- Пример: подмена удаления
+        local args = {...}
+        args[1] = workspace.JunkPart -- Вместо удаляемого объекта — мусорная часть
+        return originalFireServer(self, unpack(args))
+    end
+    return originalFireServer(self, ...)
+end)
+
+-- Добавь эту функцию для NetworkOwnership
+local function stealNetworkOwnership(part)
+    if not part:IsA("BasePart") then return end
+    if isnetworkowner then
+        if not isnetworkowner(part) then
+            part:SetNetworkOwner(localPlayer)
+        end
+    end
+end
 --[[Update variables]]--
 table.insert(genv.connections, localPlayer.CharacterAdded:Connect(function(char)
 	character = char
@@ -1651,6 +1677,30 @@ if not genv.foundRemote then
 		debugPrint("aggro ws")
 		scan(workspace, false)
 	end
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    if method == "Kick" or method == "kick" then -- Блокируем кик
+        return nil
+    end
+    return oldNamecall(self, ...)
+end)
+
+-- Добавить после обнаружения genv.foundRemote
+local spawnRemote = nil
+for _, instance in pairs(game:GetDescendants()) do
+    if not instance:IsA("RemoteEvent") then continue end
+    if instance.Name:lower():find("spawn") or instance.Name:lower():find("create") then
+        spawnRemote = instance
+        break
+    end
+end
+
+if spawnRemote then
+    debugPrint("[+] Found spawn remote: " .. spawnRemote:GetFullName())
+else
+    debugPrint("[-] No spawn remote found")
+end
 
 	if not genv.foundRemote then
 		debugPrint("aggro all")
@@ -1899,6 +1949,31 @@ addCommand("ranks", function()
 	print(printString)
 end, {"admins", "owners"}, 3)
 
+local function spyOnProperty(obj, property)
+    obj:GetPropertyChangedSignal(property):Connect(function()
+        notify(`{obj.Name}.{property} = {obj[property]}`, 5)
+    end)
+end
+
+addCommand("spy", function(_, args)
+    local target = mouse.Target
+    if target then
+        spyOnProperty(target, "Transparency") -- Пример: следим за прозрачностью
+    end
+end, {}, 3)
+
+addCommand("ghostpart", function()
+    local part = mouse.Target
+    if not part then return end
+    
+    part.Anchored = true
+    if isnetworkowner then
+        part:SetNetworkOwner(localPlayer)
+    end
+    part.Transparency = 0.5
+    notify("Part is now ghosted!", 3)
+end, {}, 3)
+
 addCommand("aliases", function()
 	local printString = "\nk00lkiddCMD command aliases:\n"
 	for i,v in pairs(commands) do
@@ -1964,6 +2039,23 @@ addCommand("view", function(plrs)
 	table.insert(genv.connections,viewConnection)
 	camera.CameraSubject = target
 end, {"spectate"}, 3)
+
+-- Добавь эти новые команды
+addCommand("spawnpart", function(_, args)
+    if not spawnRemote then return debugPrint("No spawn remote found!") end
+    local pos = character and character:FindFirstChild("HumanoidRootPart") and character.HumanoidRootPart.Position
+               or Vector3.new(0, 10, 0)
+    spawnRemote:FireServer("Part", pos, Color3.new(1, 0, 0))
+    notify("Spawned part at " .. tostring(pos), 3)
+end, {"spawnblock"}, 3)
+
+addCommand("lagserver", function()
+    if not spawnRemote then return end
+    for i = 1, 100 do
+        spawnRemote:FireServer("Part", Vector3.new(math.random(-50, 50), 10, math.random(-50, 50)))
+        task.wait(0.05)
+    end
+end, {}, 3)
 
 addCommand("unview", function(plrs)
 	if viewConnection then viewConnection:Disconnect() end
