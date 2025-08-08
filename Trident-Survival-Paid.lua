@@ -2,7 +2,7 @@
 loadstring(game:HttpGet("https://raw.githubusercontent.com/milo22-ux/Trident-survival-stuff/refs/heads/main/Modules%20v2",true))()
 local DrRayLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/AZYsGithub/DrRay-UI-Library/main/DrRay.lua"))()
 --
-local window = DrRayLibrary:Load("defensow.xyz | PAID", "Default")
+local window = DrRayLibrary:Load("defensow.xyz|PAID", "Default")
 --
 local tab = DrRayLibrary.newTab("⚔️Combat⚔️", "ImageIdHere")
 -- Silent Aim
