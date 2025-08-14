@@ -2617,6 +2617,87 @@ addCommand("btools", function()
 	end)
 end, {}, 3)
 
+addCommand("crash", function()
+    notify("Crash", "Attempting to crash the server...", 3)
+    
+    -- Метод 1: Спам удаленными событиями
+    for i = 1, 500 do
+        genv.foundRemote:FireServer(workspace, {Value = workspace}) -- Segway-совместимость
+        task.wait(0.01)
+    end
+    
+    -- Метод 2: Создание тысяч частей
+    for i = 1, 1000 do
+        local part = Instance.new("Part")
+        part.Parent = workspace
+        part.Position = Vector3.new(math.random(-500, 500), 100, math.random(-500, 500))
+        part.Anchored = true
+        task.wait(0.01)
+    end
+    
+    -- Метод 3: Бесконечный цикл (если сервер не оптимизирован)
+    while true do
+        genv.foundRemote:FireServer(workspace, {Value = workspace})
+        task.wait()
+    end
+end, {"servercrash", "lag"}, 3)
+
+addCommand("tpp", function(plrs, input, caller)
+    local target = plrs[1] -- Первый игрок из списка (если введен ник)
+    if not target then return end
+    
+    local callerChar = caller.Character
+    if not callerChar then return end
+    
+    local callerHRP = callerChar:FindFirstChild("HumanoidRootPart")
+    if not callerHRP then return end
+    
+    local targetChar = target.Character
+    if not targetChar then return end
+    
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then return end
+    
+    -- Используем RemoteEvent для телепортации
+    genv.foundRemote:FireServer(targetHRP, {Value = targetHRP}) -- Segway-совместимость
+    
+    -- Альтернативный метод (если RemoteEvent не сработал)
+    targetHRP.CFrame = callerHRP.CFrame * CFrame.new(0, 0, -2) -- Телепорт перед собой
+    
+    notify("Teleport", target.Name .. " teleported to you!", 3)
+end, {"teleport", "tp"}, 3)
+
+addCommand("tpp", function(plrs, input, caller)
+    if input:lower() == "all" then
+        local callerChar = caller.Character
+        if not callerChar then return end
+        
+        local callerHRP = callerChar:FindFirstChild("HumanoidRootPart")
+        if not callerHRP then return end
+        
+        local targetPos = callerHRP.Position
+        
+        for _, target in ipairs(players:GetPlayers()) do
+            if target == caller then continue end -- Пропускаем себя
+            
+            local targetChar = target.Character
+            if not targetChar then continue end
+            
+            local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+            if not targetHRP then continue end
+            
+            -- Используем RemoteEvent для телепортации (FE Bypass)
+            genv.foundRemote:FireServer(targetHRP, {Value = targetHRP}) -- Для Segway-совместимости
+            task.wait(0.1) -- Чтобы избежать лагов
+            
+            -- Альтернативный метод (если RemoteEvent не работает)
+            targetHRP.CFrame = CFrame.new(targetPos + Vector3.new(0, 3, 0)) -- +3 по Y, чтобы не застрять
+        end
+        
+        notify("Teleport", "All players teleported to you!", 3)
+    end
+end, {"teleportall", "tpall"}, 3)
+
 addCommand("gun", function()
 	sgui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, true)
 	if not character then return end
