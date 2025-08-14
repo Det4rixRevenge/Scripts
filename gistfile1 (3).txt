@@ -3630,6 +3630,57 @@ addCommand("invisible", function(plrs)
 	end
 end, {"invis"}, 1)
 
+addCommand("nametag", function(plrs, input)
+    local text = input or "NO NAME" -- Если текст не указан, будет "NO NAME"
+    
+    for _, plr in ipairs(plrs) do
+        local char = plr.Character
+        if not char then continue end
+        
+        local head = char:FindFirstChild("Head")
+        if not head then continue end
+        
+        -- Удаляем старый тег, если есть
+        local oldTag = head:FindFirstChild("WackyNametag")
+        if oldTag then
+            genv.foundRemote:FireServer(oldTag, {Value = oldTag}) -- Удаляем через FE-обход
+            task.wait(0.1)
+        end
+        
+        -- Создаём 3D-текст (BillboardGui + TextLabel)
+        local billboard = Instance.new("BillboardGui")
+        billboard.Name = "WackyNametag"
+        billboard.Adornee = head
+        billboard.Size = UDim2.new(0, 100, 0, 40)
+        billboard.StudsOffset = Vector3.new(0, 2.5, 0) -- Высота над головой
+        billboard.LightInfluence = 0 -- Не зависит от освещения
+        billboard.AlwaysOnTop = true
+        
+        local textLabel = Instance.new("TextLabel")
+        textLabel.Text = text
+        textLabel.Font = Enum.Font.SourceSansBold
+        textLabel.TextSize = 20
+        textLabel.TextColor3 = Color3.new(1, 0, 0) -- Красный
+        textLabel.BackgroundTransparency = 1
+        textLabel.Size = UDim2.new(1, 0, 1, 0)
+        textLabel.Parent = billboard
+        
+        -- Прикрепляем к голове (видно всем)
+        billboard.Parent = head
+        
+        -- Опционально: делаем его вечным (пока не удалят вручную)
+        table.insert(genv.connections, plr.CharacterAdded:Connect(function(newChar)
+            task.wait(1) -- Ждём загрузки нового персонажа
+            local newHead = newChar:FindFirstChild("Head")
+            if newHead then
+                billboard:Clone().Parent = newHead
+            end
+        end))
+    end
+    
+    notify("Nametag", "Added red nametags!", 3)
+end, {"3dtext", "tag"}, 2)
+
 addCommand("legwalk", function(plrs)
 	local deleteList = {"LeftUpperArm","RightUpperArm"}
 	for i,v in pairs(plrs) do
