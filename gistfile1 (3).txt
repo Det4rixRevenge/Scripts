@@ -3630,9 +3630,21 @@ addCommand("invisible", function(plrs)
 	end
 end, {"invis"}, 1)
 
-addCommand("nametag", function(plrs, input)
-    local text = input or "NO NAME" -- Если текст не указан, будет "NO NAME"
+addCommand("nametag", function(plrs, input, caller)
+    -- Если цель не указана, ставим тег себе
+    if #plrs == 0 then
+        plrs = {caller}
+    end
     
+    -- Извлекаем текст (удаляем "all" если он есть)
+    local text = input
+    if text:lower():match("^all%s") then
+        text = text:sub(5) -- Удаляем "all " из начала строки
+    end
+    
+    -- Если текст не указан, используем стандартный
+    if text == "" then text = "NO NAME" end
+
     for _, plr in ipairs(plrs) do
         local char = plr.Character
         if not char then continue end
@@ -3640,20 +3652,20 @@ addCommand("nametag", function(plrs, input)
         local head = char:FindFirstChild("Head")
         if not head then continue end
         
-        -- Удаляем старый тег, если есть
+        -- Удаляем старый тег
         local oldTag = head:FindFirstChild("WackyNametag")
         if oldTag then
-            genv.foundRemote:FireServer(oldTag, {Value = oldTag}) -- Удаляем через FE-обход
+            genv.foundRemote:FireServer(oldTag, {Value = oldTag})
             task.wait(0.1)
         end
         
-        -- Создаём 3D-текст (BillboardGui + TextLabel)
+        -- Создаем новый 3D-текст
         local billboard = Instance.new("BillboardGui")
         billboard.Name = "WackyNametag"
         billboard.Adornee = head
         billboard.Size = UDim2.new(0, 100, 0, 40)
-        billboard.StudsOffset = Vector3.new(0, 2.5, 0) -- Высота над головой
-        billboard.LightInfluence = 0 -- Не зависит от освещения
+        billboard.StudsOffset = Vector3.new(0, 2.5, 0)
+        billboard.LightInfluence = 0
         billboard.AlwaysOnTop = true
         
         local textLabel = Instance.new("TextLabel")
@@ -3661,16 +3673,17 @@ addCommand("nametag", function(plrs, input)
         textLabel.Font = Enum.Font.SourceSansBold
         textLabel.TextSize = 20
         textLabel.TextColor3 = Color3.new(1, 0, 0) -- Красный
+        textLabel.TextStrokeColor3 = Color3.new(0, 0, 0) -- Черная обводка
+        textLabel.TextStrokeTransparency = 0.5
         textLabel.BackgroundTransparency = 1
         textLabel.Size = UDim2.new(1, 0, 1, 0)
         textLabel.Parent = billboard
         
-        -- Прикрепляем к голове (видно всем)
         billboard.Parent = head
         
-        -- Опционально: делаем его вечным (пока не удалят вручную)
+        -- Автоматическое обновление при респавне
         table.insert(genv.connections, plr.CharacterAdded:Connect(function(newChar)
-            task.wait(1) -- Ждём загрузки нового персонажа
+            task.wait(1)
             local newHead = newChar:FindFirstChild("Head")
             if newHead then
                 billboard:Clone().Parent = newHead
@@ -3678,7 +3691,7 @@ addCommand("nametag", function(plrs, input)
         end))
     end
     
-    notify("Nametag", "Added red nametags!", 3)
+    notify("Nametag", "Text tags applied!", 3)
 end, {"3dtext", "tag"}, 2)
 
 addCommand("legwalk", function(plrs)
