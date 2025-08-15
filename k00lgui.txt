@@ -4310,7 +4310,7 @@ scriptbyblue2spooky.MouseButton1Click:Connect(function()
             end
         end
     end
-    Sky("116022599041831")
+    Sky("158118263")
 end)
 
  local scriptbyblue2spooky = Instance.new("TextButton")
@@ -4598,7 +4598,7 @@ scriptbyblue2spooky.MouseButton1Click:Connect(function()
             end
         end 
     end
-    spam("81587814147566")
+    spam("158118263")
 end)
 
  local scriptbyblue2spooky = Instance.new("TextButton")
